@@ -1,5 +1,8 @@
 # Kanban Task Board
 
+> **🔗 Live Demo: [kanban-seven-henna.vercel.app]
+> **Click the link above to view the deployed application.**
+
 A responsive role-based Kanban board built for the Trilink IT Solution full-stack assessment. It uses Next.js App Router, PostgreSQL with Prisma, and Auth.js credentials authentication.
 
 ## Features
