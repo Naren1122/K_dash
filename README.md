@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kanban Task Board
 
-## Getting Started
+A responsive role-based Kanban board built for the Trilink IT Solution full-stack assessment. It uses Next.js App Router, PostgreSQL with Prisma, and Auth.js credentials authentication.
 
-First, run the development server:
+## Features
+
+- Secure email/password login with bcrypt password hashes
+- JWT sessions containing the signed-in user id and role
+- Three server-rendered board columns: To Do, In Progress, and Done
+- Admins can create, reassign, move, and delete any task
+- Members can view the board and move only tasks assigned to them
+- Server-side authorization in every mutation, independent of hidden UI controls
+
+## Prerequisites
+
+- Node.js 20 or later
+- A Supabase PostgreSQL project (or another PostgreSQL database)
+
+## Setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Copy `.env.example` to `.env`, then replace the placeholders:
+
+   ```env
+   DATABASE_URL="postgresql://...:6543/postgres?pgbouncer=true"
+   DIRECT_URL="postgresql://...:5432/postgres"
+   AUTH_SECRET="a-long-random-secret"
+   ```
+
+   `DATABASE_URL` is the Supabase transaction-mode pooler used at runtime. `DIRECT_URL` is the session/direct connection used by Prisma migrations. Never commit `.env`.
+
+3. Apply migrations:
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+4. Seed the demonstration data:
+
+   ```bash
+   npx prisma db seed
+   ```
+
+5. Run the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000).
+
+## Seeded credentials
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@kanban.local` | `Admin123!` |
+| Member | `maya@kanban.local` | `Member123!` |
+| Member | `liam@kanban.local` | `Member123!` |
+
+These accounts are for local assessment and demonstration only. The seed script is safe to rerun: it updates these users and replaces only the four named starter tasks.
+
+## Useful commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Create a new development migration after changing prisma/schema.prisma
+npx prisma migrate dev --name <migration-name>
+
+# Run the seed script
+npx prisma db seed
+
+# Validate production compilation
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture and security
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [`src/app/page.tsx`](src/app/page.tsx) is a Server Component. It calls `auth()` and Prisma on the server, redirects unauthenticated users to `/login`, and passes serializable board data to the client.
+- [`auth.ts`](auth.ts) configures the Auth.js Credentials provider. It compares submitted passwords with bcrypt hashes and copies the user id and role into the JWT-backed session.
+- [`src/components/board.tsx`](src/components/board.tsx) is the interactive Client Component. It presents controls appropriate to the visible role, but those controls are not the security boundary.
+- [`src/app/actions/tasks.ts`](src/app/actions/tasks.ts) contains all writes. Every Server Action re-fetches the session, validates input, and verifies the role. For member status changes, it also re-reads the task and confirms `assigneeId === session.user.id` before updating. Admin-only actions reject members on the server.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The application intentionally uses status dropdowns instead of drag-and-drop; both roles and actions meet the task-board requirements while keeping the UI accessible on touch devices.
