@@ -3,9 +3,11 @@ import { auth } from "../auth";
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
+  const userRole = req.auth?.user?.role;
   const { pathname } = req.nextUrl;
 
   const isLoginPage = pathname === "/login";
+  const isAdminPage = pathname.startsWith("/admin");
 
   if (isLoginPage) {
     if (isLoggedIn) {
@@ -23,6 +25,10 @@ export default auth((req) => {
     return NextResponse.redirect(
       new URL(`/login?callbackUrl=${encodedCallbackUrl}`, req.nextUrl)
     );
+  }
+
+  if (isAdminPage && userRole !== "ADMIN") {
+    return NextResponse.redirect(new URL("/403", req.nextUrl));
   }
 
   return NextResponse.next();
