@@ -1,6 +1,6 @@
 "use server";
 
-import { Role, TaskStatus } from "@prisma/client";
+import { Role, TaskStatus } from "../../generated/prisma/client";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "../../../auth";

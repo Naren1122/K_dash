@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TaskStatus } from "@prisma/client";
+import { PrismaClient, Role, TaskStatus } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();

@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-
+// import { redirect } from "next/navigation";
 import { auth } from "../../auth";
 import { Board } from "@/components/board";
 import { prisma } from "@/lib/prisma";
@@ -7,9 +6,9 @@ import { prisma } from "@/lib/prisma";
 export default async function Home() {
   const session = await auth();
 
-  if (!session?.user) {
-    redirect("/login");
-  }
+  // if (!session?.user) {
+  //   redirect("/login");
+  // }
 
   const tasks = await prisma.task.findMany({
     orderBy: { updatedAt: "desc" },
@@ -38,11 +37,11 @@ export default async function Home() {
 
   return (
     <Board
-      role={session.user.role}
+      role={session?.user?.role || "MEMBER"}
       assignee={assignees}
       tasks={boardTasks}
-      userId={session.user.id}
-      userName={session.user.name ?? session.user.email ?? "Signed-in user"}
+      userId={session?.user?.id || ""}
+      userName={session?.user?.name ?? session?.user?.email ?? "Signed-in user"}
     />
   );
 }
