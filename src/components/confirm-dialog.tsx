@@ -60,9 +60,8 @@ export function ConfirmDialog({ taskTitle, onConfirm, onCancel }: ConfirmDialogP
   return (
     // Backdrop
     <div
-      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm transition-all duration-300 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm transition-all duration-300 ${visible ? "opacity-100" : "opacity-0"
+        }`}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -70,9 +69,8 @@ export function ConfirmDialog({ taskTitle, onConfirm, onCancel }: ConfirmDialogP
     >
       {/* Dialog card */}
       <div
-        className={`w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(15,23,42,0.5)] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
-        }`}
+        className={`w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(15,23,42,0.5)] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+          }`}
       >
         {/* Icon */}
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100">

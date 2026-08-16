@@ -37,17 +37,17 @@ export function AppShell({ user, children }: AppShellProps) {
     },
     ...(isAdmin
       ? [
-          {
-            name: "Dashboard Overview",
-            href: "/admin",
-            icon: (
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            ),
-            badge: "Admin",
-          },
-        ]
+        {
+          name: "Dashboard Overview",
+          href: "/admin",
+          icon: (
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          ),
+          badge: "Admin",
+        },
+      ]
       : []),
   ];
 
@@ -80,9 +80,8 @@ export function AppShell({ user, children }: AppShellProps) {
 
       {/* Sidebar Component */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-hidden border-r border-slate-200/80 bg-white p-5 transition-all duration-200 ${sidebarCollapsed ? "md:w-20" : ""} md:translate-x-0 ${
-          mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-hidden border-r border-slate-200/80 bg-white p-5 transition-all duration-200 ${sidebarCollapsed ? "md:w-20" : ""} md:translate-x-0 ${mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
+          }`}
       >
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 py-3">
@@ -117,11 +116,10 @@ export function AppShell({ user, children }: AppShellProps) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition ${
-                  isActive
+                className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition ${isActive
                     ? "bg-slate-900 text-white shadow-sm"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   {item.icon}
@@ -129,13 +127,12 @@ export function AppShell({ user, children }: AppShellProps) {
                 </div>
                 {item.badge ? (
                   <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                      isActive
+                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isActive
                         ? "bg-white/20 text-white"
                         : isRestricted
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-purple-100 text-purple-700"
-                    }`}
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}
                   >
                     {item.badge}
                   </span>
@@ -149,11 +146,10 @@ export function AppShell({ user, children }: AppShellProps) {
         <div className="mt-auto rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
           <div className="flex items-center gap-3">
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-lg font-bold text-xs ${
-                isAdmin
+              className={`flex h-9 w-9 items-center justify-center rounded-lg font-bold text-xs ${isAdmin
                   ? "bg-purple-100 text-purple-700 border border-purple-200"
                   : "bg-sky-100 text-sky-700 border border-sky-200"
-              }`}
+                }`}
             >
               {getInitials(user.name, user.email)}
             </div>
@@ -164,11 +160,10 @@ export function AppShell({ user, children }: AppShellProps) {
               <p className="truncate text-[11px] text-slate-500">{user.email || ""}</p>
             </div>
             <span
-              className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
-                isAdmin
+              className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${isAdmin
                   ? "bg-purple-100 text-purple-800"
                   : "bg-slate-200 text-slate-700"
-              }`}
+                }`}
             >
               {user.role}
             </span>
@@ -205,11 +200,10 @@ export function AppShell({ user, children }: AppShellProps) {
 
             {/* Role Badge */}
             <span
-              className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
-                isAdmin
+              className={`rounded-lg px-2.5 py-1 text-xs font-bold ${isAdmin
                   ? "bg-purple-100 text-purple-800"
                   : "bg-sky-100 text-sky-800"
-              }`}
+                }`}
             >
               {user.role}
             </span>

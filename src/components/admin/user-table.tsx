@@ -49,11 +49,10 @@ export function UserTable({ users }: UserTableProps) {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs ${
-                          isAdmin
+                        className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs ${isAdmin
                             ? "bg-purple-100 text-purple-700"
                             : "bg-sky-100 text-sky-700"
-                        }`}
+                          }`}
                       >
                         {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                       </div>
@@ -67,16 +66,14 @@ export function UserTable({ users }: UserTableProps) {
                   </td>
                   <td className="px-5 py-4">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                        isAdmin
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${isAdmin
                           ? "bg-purple-50 text-purple-700 border border-purple-200/60"
                           : "bg-sky-50 text-sky-700 border border-sky-200/60"
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          isAdmin ? "bg-purple-600" : "bg-sky-500"
-                        }`}
+                        className={`h-1.5 w-1.5 rounded-full ${isAdmin ? "bg-purple-600" : "bg-sky-500"
+                          }`}
                       />
                       {user.role}
                     </span>
