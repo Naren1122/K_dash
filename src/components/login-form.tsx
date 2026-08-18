@@ -8,6 +8,9 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
 import { loginSchema, LoginInput } from "@/lib/loginSchema";
+import { logger } from "@/lib/logger";
+
+const loginLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,21 +28,28 @@ export function LoginForm() {
 
   useEffect(() => {
     if (searchParams.get("message") === "signed_out") {
+      loginLogger("signed_out_page_view");
       showToast("You've been signed out. See you next time! 👋", "info");
     }
   }, [searchParams, showToast]);
 
   async function onSubmit(data: LoginInput) {
     setError(null);
+    loginLogger("login_submit_attempt", { email: data.email });
+
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
       redirect: false,
     });
+
     if (result?.error) {
+      loginLogger("login_failed", { email: data.email, error: result.error });
       setError("Invalid email or password.");
       return;
     }
+
+    loginLogger("login_success", { email: data.email });
     showToast("Welcome back! Signing you in... 🚀", "success");
     setTimeout(() => { router.replace("/"); router.refresh(); }, 600);
   }

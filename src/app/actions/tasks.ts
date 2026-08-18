@@ -14,6 +14,9 @@ import {
   UpdateTaskStatusInput,
   ReassignTaskInput,
 } from "@/lib/taskSchema";
+import { logger } from "@/lib/logger";
+
+const actionLogger = logger.action.bind(logger);
 
 class TaskActionError extends Error {
   constructor(
@@ -29,6 +32,7 @@ function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
 
   if (!result.success) {
+    actionLogger("validation_failed", { errors: result.error.issues });
     throw new TaskActionError(400, result.error.issues[0]?.message ?? "Invalid input");
   }
 
@@ -39,13 +43,16 @@ async function getCurrentUser() {
   const session = await auth();
 
   if (!session?.user?.id) {
+    actionLogger("auth_failed", { reason: "no_session" });
     throw new TaskActionError(401, "Unauthorized");
   }
 
   if (session.user.role !== Role.ADMIN && session.user.role !== Role.MEMBER) {
+    actionLogger("auth_failed", { reason: "invalid_role", role: session.user.role });
     throw new TaskActionError(403, "Forbidden");
   }
 
+  actionLogger("auth_success", { userId: session.user.id, role: session.user.role });
   return session.user;
 }
 
@@ -53,6 +60,7 @@ async function requireAdmin() {
   const user = await getCurrentUser();
 
   if (user.role !== Role.ADMIN) {
+    actionLogger("admin_required", { userId: user.id, role: user.role });
     throw new TaskActionError(403, "Only administrators can perform this action");
   }
 
@@ -67,6 +75,7 @@ async function getTaskOrThrow(taskId: unknown) {
   });
 
   if (!task) {
+    actionLogger("task_not_found", { taskId: id });
     throw new TaskActionError(404, "Task not found");
   }
 
@@ -75,6 +84,7 @@ async function getTaskOrThrow(taskId: unknown) {
 
 async function assertMemberOwnsTask(userId: string, task: { assigneeId: string | null }) {
   if (task.assigneeId !== userId) {
+    actionLogger("ownership_check_failed", { userId, taskAssigneeId: task.assigneeId });
     throw new TaskActionError(403, "Members can only update tasks assigned to them");
   }
 }
@@ -86,6 +96,7 @@ async function assertAssigneeIsMember(assigneeId: string) {
   });
 
   if (!assignee || assignee.role !== Role.MEMBER) {
+    actionLogger("assignee_validation_failed", { assigneeId, role: assignee?.role });
     throw new TaskActionError(400, "Tasks can only be assigned to members");
   }
 }
@@ -98,11 +109,14 @@ export async function createTask(input: CreateTaskInput) {
     await assertAssigneeIsMember(assigneeId);
   }
 
+  actionLogger("create_task_start", { userId: user.id, title, assigneeId });
+
   const task = await prisma.task.create({
     data: { title, description, assigneeId, createdById: user.id },
     select: { id: true },
   });
 
+  actionLogger("create_task_success", { taskId: task.id, userId: user.id });
   revalidatePath("/");
   return task;
 }
@@ -116,12 +130,15 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput) {
     await assertMemberOwnsTask(user.id, task);
   }
 
+  actionLogger("update_task_status_start", { taskId: task.id, userId: user.id, status });
+
   const updatedTask = await prisma.task.update({
     where: { id: task.id },
     data: { status },
     select: { id: true, status: true },
   });
 
+  actionLogger("update_task_status_success", { taskId: updatedTask.id, status: updatedTask.status, userId: user.id });
   revalidatePath("/");
   return updatedTask;
 }
@@ -135,12 +152,15 @@ export async function reassignTask(input: ReassignTaskInput) {
     await assertAssigneeIsMember(assigneeId);
   }
 
+  actionLogger("reassign_task_start", { taskId: task.id, newAssigneeId: assigneeId });
+
   const updatedTask = await prisma.task.update({
     where: { id: task.id },
     data: { assigneeId },
     select: { id: true, assigneeId: true },
   });
 
+  actionLogger("reassign_task_success", { taskId: updatedTask.id, newAssigneeId: updatedTask.assigneeId });
   revalidatePath("/");
   return updatedTask;
 }
@@ -149,6 +169,9 @@ export async function deleteTask(taskId: unknown) {
   await requireAdmin();
   const task = await getTaskOrThrow(taskId);
 
+  actionLogger("delete_task_start", { taskId: task.id });
+
   await prisma.task.delete({ where: { id: task.id } });
+  actionLogger("delete_task_success", { taskId: task.id });
   revalidatePath("/");
 }

@@ -4,31 +4,29 @@ import { auth } from "../auth";
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const userRole = req.auth?.user?.role;
-  const { pathname } = req.nextUrl;
+  const { pathname, search } = req.nextUrl;
+  const baseUrl = req.url;
 
   const isLoginPage = pathname === "/login";
   const isAdminPage = pathname.startsWith("/admin");
 
   if (isLoginPage) {
     if (isLoggedIn) {
-      return NextResponse.redirect(new URL("/", req.nextUrl));
+      return NextResponse.redirect(new URL("/", baseUrl));
     }
     return NextResponse.next();
   }
 
   if (!isLoggedIn) {
-    let callbackUrl = pathname;
-    if (req.nextUrl.search) {
-      callbackUrl += req.nextUrl.search;
-    }
+    const callbackUrl = pathname + (search || "");
     const encodedCallbackUrl = encodeURIComponent(callbackUrl);
     return NextResponse.redirect(
-      new URL(`/login?callbackUrl=${encodedCallbackUrl}`, req.nextUrl)
+      new URL(`/login?callbackUrl=${encodedCallbackUrl}`, baseUrl)
     );
   }
 
   if (isAdminPage && userRole !== "ADMIN") {
-    return NextResponse.redirect(new URL("/403", req.nextUrl));
+    return NextResponse.redirect(new URL("/403", baseUrl));
   }
 
   return NextResponse.next();
