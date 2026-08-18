@@ -1,9 +1,12 @@
 "use client";
 
-import { FormEvent, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createTask, deleteTask, reassignTask, updateTaskStatus } from "@/app/actions/tasks";
 import { useToast } from "@/components/toast-provider";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { createTaskSchema, CreateTaskFormValues, CreateTaskInput } from "@/lib/taskSchema";
 
 type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
 type Assignee = { id: string; name: string | null; email: string };
@@ -57,6 +60,15 @@ export function Board({ assignee, tasks, role, userId }: BoardProps) {
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateTaskFormValues, unknown, CreateTaskInput>({
+    resolver: zodResolver(createTaskSchema),
+    defaultValues: { title: "", description: "", assigneeId: "" },
+  });
   const isAdmin = role === "ADMIN";
   const myTasks = tasks.filter((task) => task.assignee?.id === userId).length;
 
@@ -72,19 +84,11 @@ export function Board({ assignee, tasks, role, userId }: BoardProps) {
     });
   }
 
-  function handleCreateTask(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
+  function onSubmit(data: CreateTaskInput) {
     runAction(
-      () =>
-        createTask({
-          title: formData.get("title"),
-          description: formData.get("description"),
-          assigneeId: formData.get("assigneeId"),
-        }),
+      () => createTask(data),
       () => {
-        form.reset();
+        reset();
         setShowCreateForm(false);
         showToast("Task created successfully!", "success");
       }
@@ -150,7 +154,7 @@ export function Board({ assignee, tasks, role, userId }: BoardProps) {
       {isAdmin && showCreateForm ? (
         <form
           className="mt-6 grid gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm md:grid-cols-2 md:p-6"
-          onSubmit={handleCreateTask}
+          onSubmit={handleSubmit(onSubmit)}
         >
           <div className="md:col-span-2">
             <h3 className="text-base font-bold text-slate-900">Create a new task</h3>
@@ -158,22 +162,25 @@ export function Board({ assignee, tasks, role, userId }: BoardProps) {
               Keep it clear, concise, and assign it to a team member when ready.
             </p>
           </div>
-          <label className="text-xs font-semibold text-slate-700">
-            Task title
-            <input
-              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
-              maxLength={200}
-              name="title"
-              placeholder="e.g. Review onboarding flow"
-              required
-            />
-          </label>
+          <div>
+            <label className="text-xs font-semibold text-slate-700">
+              Task title
+              <input
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                maxLength={200}
+                placeholder="e.g. Review onboarding flow"
+                {...register("title")}
+              />
+            </label>
+            {errors.title ? (
+              <p className="mt-1 text-xs font-medium text-red-600">{errors.title.message}</p>
+            ) : null}
+          </div>
           <label className="text-xs font-semibold text-slate-700">
             Assign to
             <select
               className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
-              defaultValue=""
-              name="assigneeId"
+              {...register("assigneeId")}
             >
               <option value="">Leave unassigned</option>
               {assignee.map((a) => (
@@ -183,19 +190,24 @@ export function Board({ assignee, tasks, role, userId }: BoardProps) {
               ))}
             </select>
           </label>
-          <label className="text-xs font-semibold text-slate-700 md:col-span-2">
-            Description
-            <textarea
-              className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
-              maxLength={2000}
-              name="description"
-              placeholder="Add useful context, expected outcome, or dependencies..."
-            />
-          </label>
+          <div className="md:col-span-2">
+            <label className="text-xs font-semibold text-slate-700">
+              Description
+              <textarea
+                className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                maxLength={2000}
+                placeholder="Add useful context, expected outcome, or dependencies..."
+                {...register("description")}
+              />
+            </label>
+            {errors.description ? (
+              <p className="mt-1 text-xs font-medium text-red-600">{errors.description.message}</p>
+            ) : null}
+          </div>
           <div className="flex justify-end md:col-span-2">
             <button
               className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isPending}
+              disabled={isPending || isSubmitting}
               type="submit"
             >
               {isPending ? "Creating..." : "Create Task"}

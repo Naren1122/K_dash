@@ -1,26 +1,19 @@
 "use server";
 
-import { Role, TaskStatus } from "../../generated/prisma/client";
+import { Role } from "../../generated/prisma/client";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { auth } from "../../../auth";
 import { prisma } from "@/lib/prisma";
-
-type CreateTaskInput = {
-  title: unknown;
-  description?: unknown;
-  assigneeId?: unknown;
-};
-
-type UpdateTaskStatusInput = {
-  taskId: unknown;
-  status: unknown;
-};
-
-type ReassignTaskInput = {
-  taskId: unknown;
-  assigneeId: unknown;
-};
+import {
+  createTaskSchema,
+  CreateTaskInput,
+  taskIdSchema,
+  taskStatusSchema,
+  UpdateTaskStatusInput,
+  ReassignTaskInput,
+} from "@/lib/taskSchema";
 
 class TaskActionError extends Error {
   constructor(
@@ -30,6 +23,16 @@ class TaskActionError extends Error {
     super(message);
     this.name = "TaskActionError";
   }
+}
+
+function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown): T {
+  const result = schema.safeParse(input);
+
+  if (!result.success) {
+    throw new TaskActionError(400, result.error.issues[0]?.message ?? "Invalid input");
+  }
+
+  return result.data;
 }
 
 async function getCurrentUser() {
@@ -56,42 +59,8 @@ async function requireAdmin() {
   return user;
 }
 
-function requiredString(value: unknown, fieldName: string) {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new TaskActionError(400, `${fieldName} is required`);
-  }
-
-  return value.trim();
-}
-
-function optionalString(value: unknown, fieldName: string, maxLength: number) {
-  if (value === undefined || value === null || value === "") {
-    return null;
-  }
-
-  if (typeof value !== "string") {
-    throw new TaskActionError(400, `${fieldName} must be text`);
-  }
-
-  const normalized = value.trim();
-
-  if (normalized.length > maxLength) {
-    throw new TaskActionError(400, `${fieldName} must be ${maxLength} characters or fewer`);
-  }
-
-  return normalized || null;
-}
-
-function parseStatus(value: unknown) {
-  if (typeof value !== "string" || !Object.values(TaskStatus).includes(value as TaskStatus)) {
-    throw new TaskActionError(400, "Invalid task status");
-  }
-
-  return value as TaskStatus;
-}
-
 async function getTaskOrThrow(taskId: unknown) {
-  const id = requiredString(taskId, "Task id");
+  const id = parseOrThrow(taskIdSchema, taskId);
   const task = await prisma.task.findUnique({
     where: { id },
     select: { id: true, assigneeId: true },
@@ -123,14 +92,7 @@ async function assertAssigneeIsMember(assigneeId: string) {
 
 export async function createTask(input: CreateTaskInput) {
   const user = await requireAdmin();
-  const title = requiredString(input.title, "Title");
-
-  if (title.length > 200) {
-    throw new TaskActionError(400, "Title must be 200 characters or fewer");
-  }
-
-  const description = optionalString(input.description, "Description", 2_000);
-  const assigneeId = optionalString(input.assigneeId, "Assignee id", 100);
+  const { title, description, assigneeId } = parseOrThrow(createTaskSchema, input);
 
   if (assigneeId) {
     await assertAssigneeIsMember(assigneeId);
@@ -147,7 +109,7 @@ export async function createTask(input: CreateTaskInput) {
 
 export async function updateTaskStatus(input: UpdateTaskStatusInput) {
   const user = await getCurrentUser();
-  const status = parseStatus(input.status);
+  const status = parseOrThrow(taskStatusSchema, input.status);
   const task = await getTaskOrThrow(input.taskId);
 
   if (user.role === Role.MEMBER) {
@@ -167,7 +129,7 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput) {
 export async function reassignTask(input: ReassignTaskInput) {
   await requireAdmin();
   const task = await getTaskOrThrow(input.taskId);
-  const assigneeId = optionalString(input.assigneeId, "Assignee id", 100);
+  const assigneeId = parseOrThrow(createTaskSchema.shape.assigneeId, input.assigneeId);
 
   if (assigneeId) {
     await assertAssigneeIsMember(assigneeId);

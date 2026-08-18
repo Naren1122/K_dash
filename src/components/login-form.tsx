@@ -1,17 +1,27 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
+import { loginSchema, LoginInput } from "@/lib/loginSchema";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "admin@kanban.local", password: "Admin123!" },
+  });
 
   useEffect(() => {
     if (searchParams.get("message") === "signed_out") {
@@ -19,12 +29,17 @@ export function LoginForm() {
     }
   }, [searchParams, showToast]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(null); setIsSubmitting(true);
-    const formData = new FormData(event.currentTarget);
-    const result = await signIn("credentials", { email: formData.get("email"), password: formData.get("password"), redirect: false });
-    setIsSubmitting(false);
-    if (result?.error) { setError("Invalid email or password."); return; }
+  async function onSubmit(data: LoginInput) {
+    setError(null);
+    const result = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+    if (result?.error) {
+      setError("Invalid email or password.");
+      return;
+    }
     showToast("Welcome back! Signing you in... 🚀", "success");
     setTimeout(() => { router.replace("/"); router.refresh(); }, 600);
   }
@@ -43,9 +58,11 @@ export function LoginForm() {
           <div className="w-full max-w-md">
             <div className="flex items-center gap-3 lg:hidden"><div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-950 p-1"><Image alt="Kanban logo" className="h-full w-full object-contain" height={48} priority src="/Screenshot 2026-07-23 143649.png" width={48} /></div><span className="font-bold text-slate-900">Kanban Task Board</span></div>
             <p className="mt-10 text-xs font-bold uppercase tracking-[0.2em] text-sky-600 lg:mt-0">Welcome back</p><h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Sign in to your workspace</h2><p className="mt-3 text-sm leading-6 text-slate-500">Use a seeded account below to explore the board and its role-based controls.</p>
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-              <label className="block text-sm font-bold text-slate-700" htmlFor="email">Email<input autoComplete="email" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100" defaultValue="admin@kanban.local" id="email" name="email" required type="email" /></label>
-              <label className="block text-sm font-bold text-slate-700" htmlFor="password">Password<input autoComplete="current-password" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100" defaultValue="Admin123!" id="password" name="password" required type="password" /></label>
+            <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)}>
+              <label className="block text-sm font-bold text-slate-700" htmlFor="email">Email<input autoComplete="email" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100" id="email" type="email" {...register("email")} /></label>
+              {errors.email ? <p className="text-xs font-medium text-red-600">{errors.email.message}</p> : null}
+              <label className="block text-sm font-bold text-slate-700" htmlFor="password">Password<input autoComplete="current-password" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100" id="password" type="password" {...register("password")} /></label>
+              {errors.password ? <p className="text-xs font-medium text-red-600">{errors.password.message}</p> : null}
               {error ? <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</p> : null}
               <button className="w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60" disabled={isSubmitting} type="submit">{isSubmitting ? "Signing in..." : "Sign in to board"}</button>
             </form>
