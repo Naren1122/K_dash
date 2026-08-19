@@ -4,7 +4,7 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, mounted, toggleTheme } = useTheme();
   const isDark = theme === "dark";
 
   return (
@@ -15,7 +15,13 @@ export function ThemeToggle() {
       title={isDark ? "Switch to Bright Mode" : "Switch to Dark Mode"}
       aria-label="Toggle dark mode"
     >
-      {isDark ? (
+      {!mounted ? (
+        // Render a stable placeholder during SSR to avoid hydration mismatch
+        <>
+          <Moon className="h-4 w-4 text-sky-600" />
+          <span className="hidden sm:inline">Dark</span>
+        </>
+      ) : isDark ? (
         <>
           <Sun className="h-4 w-4 text-amber-400" />
           <span className="hidden sm:inline">Bright</span>
