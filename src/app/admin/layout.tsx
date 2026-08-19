@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/lib/auth-guard";
+import { requireAdmin } from "@/lib/utils/auth-guard";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AdminLayout({

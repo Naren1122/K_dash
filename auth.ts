@@ -5,7 +5,7 @@ import { Role } from "./src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
+import { logger } from "@/lib/utils/logger";
 
 const authLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 
@@ -52,6 +52,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         authLogger("authorize_success", { email, userId: user.id, role: user.role });
 
+        // Ensure we are returning exactly what the JWT callback expects
         return {
           id: user.id,
           name: user.name,
@@ -63,20 +64,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      // 1. On initial sign-in, `user` is available. Attach properties to the token.
       if (user) {
-        token.role = user.role;
-        authLogger("jwt_created", { userId: token.sub, role: user.role });
+        token.id = user.id ?? token.sub ?? "";
+        token.role = user.role as Role;
+        authLogger("jwt_created", { userId: user.id, role: user.role });
       }
+      
+      // 2. Handle manual session updates if triggered elsewhere in the app
       if (trigger === "update" && session) {
+        if (session.role) token.role = session.role;
         authLogger("jwt_updated", { userId: token.sub });
       }
+      
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.sub && token.role) {
-        session.user.id = token.sub;
+      // 3. Transfer the token data to the session object for client-side use
+      if (session.user) {
+        session.user.id = (token.id as string) || (token.sub as string);
         session.user.role = token.role as Role;
-        authLogger("session_created", { userId: token.sub, role: token.role });
+        
+        authLogger("session_created", { userId: session.user.id, role: session.user.role });
       }
       return session;
     },

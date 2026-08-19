@@ -1,11 +1,8 @@
 import "server-only";
 
-import { PrismaClient } from "../generated/prisma/client";
-import { logger } from "@/lib/logger";
+import { PrismaClient } from "@/generated/prisma/client";
 
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
-
-const dbLogger = logger.db;
 
 export const prisma =
   globalForPrisma.prisma ??

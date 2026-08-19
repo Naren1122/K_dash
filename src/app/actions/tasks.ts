@@ -1,91 +1,37 @@
 "use server";
 
+import { z } from "zod";
 import { Role } from "../../generated/prisma/client";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 
-import { auth } from "../../../auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/types/prisma";
 import {
   createTaskSchema,
   CreateTaskInput,
   taskIdSchema,
   taskStatusSchema,
+  updateTaskSchema,
   UpdateTaskStatusInput,
   ReassignTaskInput,
-} from "@/lib/taskSchema";
-import { logger } from "@/lib/logger";
+} from "@/lib/schemas/taskSchema";
+import { logger } from "@/lib/utils/logger";
+import {
+  ActionError,
+  getCurrentUser,
+  getTaskOrThrow,
+  parseOrThrow,
+  requireAdmin,
+} from "@/lib/utils/action-utils";
+
+import { createActivityLog } from "@/lib/data/activity";
+import { createNotification } from "@/lib/data/notifications";
 
 const actionLogger = logger.action.bind(logger);
-
-class TaskActionError extends Error {
-  constructor(
-    public readonly status: 400 | 401 | 403 | 404,
-    message: string,
-  ) {
-    super(message);
-    this.name = "TaskActionError";
-  }
-}
-
-function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown): T {
-  const result = schema.safeParse(input);
-
-  if (!result.success) {
-    actionLogger("validation_failed", { errors: result.error.issues });
-    throw new TaskActionError(400, result.error.issues[0]?.message ?? "Invalid input");
-  }
-
-  return result.data;
-}
-
-async function getCurrentUser() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    actionLogger("auth_failed", { reason: "no_session" });
-    throw new TaskActionError(401, "Unauthorized");
-  }
-
-  if (session.user.role !== Role.ADMIN && session.user.role !== Role.MEMBER) {
-    actionLogger("auth_failed", { reason: "invalid_role", role: session.user.role });
-    throw new TaskActionError(403, "Forbidden");
-  }
-
-  actionLogger("auth_success", { userId: session.user.id, role: session.user.role });
-  return session.user;
-}
-
-async function requireAdmin() {
-  const user = await getCurrentUser();
-
-  if (user.role !== Role.ADMIN) {
-    actionLogger("admin_required", { userId: user.id, role: user.role });
-    throw new TaskActionError(403, "Only administrators can perform this action");
-  }
-
-  return user;
-}
-
-async function getTaskOrThrow(taskId: unknown) {
-  const id = parseOrThrow(taskIdSchema, taskId);
-  const task = await prisma.task.findUnique({
-    where: { id },
-    select: { id: true, assigneeId: true },
-  });
-
-  if (!task) {
-    actionLogger("task_not_found", { taskId: id });
-    throw new TaskActionError(404, "Task not found");
-  }
-
-  return task;
-}
 
 async function assertMemberOwnsTask(userId: string, task: { assigneeId: string | null }) {
   if (task.assigneeId !== userId) {
     actionLogger("ownership_check_failed", { userId, taskAssigneeId: task.assigneeId });
-    throw new TaskActionError(403, "Members can only update tasks assigned to them");
+    throw new ActionError(403, "Members can only update tasks assigned to them");
   }
 }
 
@@ -97,28 +43,124 @@ async function assertAssigneeIsMember(assigneeId: string) {
 
   if (!assignee || assignee.role !== Role.MEMBER) {
     actionLogger("assignee_validation_failed", { assigneeId, role: assignee?.role });
-    throw new TaskActionError(400, "Tasks can only be assigned to members");
+    throw new ActionError(400, "Tasks can only be assigned to members");
   }
+}
+
+const updateTaskInputSchema = updateTaskSchema.extend({
+  taskId: taskIdSchema,
+});
+
+type UpdateTaskData = z.infer<typeof updateTaskInputSchema>;
+
+function pickUpdatableFields(
+  data: UpdateTaskData,
+  isAdmin: boolean,
+): Partial<Omit<UpdateTaskData, "taskId" | "labelIds">> {
+  const { title, description, assigneeId, dueDate, priority } = data;
+
+  const patch: Partial<Omit<UpdateTaskData, "taskId" | "labelIds">> = {};
+
+  if (title !== undefined) patch.title = title;
+  if (description !== undefined) patch.description = description;
+  if (assigneeId !== undefined) patch.assigneeId = assigneeId;
+  if (dueDate !== undefined) patch.dueDate = dueDate;
+  if (isAdmin && priority !== undefined) patch.priority = priority;
+
+  return patch;
 }
 
 export async function createTask(input: CreateTaskInput) {
   const user = await requireAdmin();
-  const { title, description, assigneeId } = parseOrThrow(createTaskSchema, input);
+  const { title, description, assigneeId, priority, dueDate, labelIds } =
+    parseOrThrow(createTaskSchema, input);
 
   if (assigneeId) {
     await assertAssigneeIsMember(assigneeId);
   }
 
-  actionLogger("create_task_start", { userId: user.id, title, assigneeId });
+  actionLogger("create_task_start", { userId: user.id, title, assigneeId, priority, dueDate });
 
   const task = await prisma.task.create({
-    data: { title, description, assigneeId, createdById: user.id },
+    data: {
+      title,
+      description,
+      assigneeId,
+      priority,
+      dueDate,
+      createdById: user.id,
+      labels: {
+        create: labelIds.map((labelId) => ({ labelId })),
+      },
+    },
     select: { id: true },
   });
+
+  await createActivityLog({
+    taskId: task.id,
+    userId: user.id,
+    action: "CREATED",
+    newValue: title,
+  });
+
+  if (assigneeId) {
+    await createNotification(assigneeId, "TASK_ASSIGNED", {
+      taskId: task.id,
+      taskTitle: title,
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `Assigned task "${title}" to you`,
+    });
+  }
 
   actionLogger("create_task_success", { taskId: task.id, userId: user.id });
   revalidatePath("/");
   return task;
+}
+
+export async function updateTask(input: UpdateTaskData) {
+  const user = await getCurrentUser();
+  const data = parseOrThrow(updateTaskInputSchema, input);
+  const task = await getTaskOrThrow(data.taskId);
+
+  if (user.role === Role.MEMBER) {
+    await assertMemberOwnsTask(user.id, task);
+  }
+
+  const isAdmin = user.role === Role.ADMIN;
+  const patch = pickUpdatableFields(data, isAdmin);
+
+  if (patch.assigneeId && isAdmin) {
+    await assertAssigneeIsMember(patch.assigneeId);
+  }
+
+  actionLogger("update_task_start", { taskId: task.id, userId: user.id, fields: Object.keys(patch) });
+
+  const updatedTask = await prisma.task.update({
+    where: { id: task.id },
+    data: {
+      ...patch,
+      labels:
+        data.labelIds !== undefined
+          ? {
+            deleteMany: {},
+            create: data.labelIds.map((labelId) => ({ labelId })),
+          }
+          : undefined,
+    },
+    select: { id: true },
+  });
+
+  await createActivityLog({
+    taskId: updatedTask.id,
+    userId: user.id,
+    action: "UPDATED_DETAILS",
+    field: Object.keys(patch).join(", "),
+  });
+
+  actionLogger("update_task_success", { taskId: updatedTask.id, userId: user.id });
+  revalidatePath("/");
+  return updatedTask;
 }
 
 export async function updateTaskStatus(input: UpdateTaskStatusInput) {
@@ -135,8 +177,27 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput) {
   const updatedTask = await prisma.task.update({
     where: { id: task.id },
     data: { status },
-    select: { id: true, status: true },
+    select: { id: true, status: true, title: true, assigneeId: true },
   });
+
+  await createActivityLog({
+    taskId: task.id,
+    userId: user.id,
+    action: "UPDATED_STATUS",
+    field: "status",
+    oldValue: task.status,
+    newValue: status,
+  });
+
+  if (updatedTask.assigneeId) {
+    await createNotification(updatedTask.assigneeId, "TASK_STATUS_CHANGED", {
+      taskId: task.id,
+      taskTitle: updatedTask.title,
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `Changed status of "${updatedTask.title}" to ${status}`,
+    });
+  }
 
   actionLogger("update_task_status_success", { taskId: updatedTask.id, status: updatedTask.status, userId: user.id });
   revalidatePath("/");
@@ -145,6 +206,7 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput) {
 
 export async function reassignTask(input: ReassignTaskInput) {
   await requireAdmin();
+  const user = await getCurrentUser();
   const task = await getTaskOrThrow(input.taskId);
   const assigneeId = parseOrThrow(createTaskSchema.shape.assigneeId, input.assigneeId);
 
@@ -157,8 +219,27 @@ export async function reassignTask(input: ReassignTaskInput) {
   const updatedTask = await prisma.task.update({
     where: { id: task.id },
     data: { assigneeId },
-    select: { id: true, assigneeId: true },
+    select: { id: true, assigneeId: true, title: true },
   });
+
+  await createActivityLog({
+    taskId: task.id,
+    userId: user.id,
+    action: "REASSIGNED",
+    field: "assigneeId",
+    oldValue: task.assigneeId || undefined,
+    newValue: assigneeId || undefined,
+  });
+
+  if (assigneeId) {
+    await createNotification(assigneeId, "TASK_ASSIGNED", {
+      taskId: task.id,
+      taskTitle: updatedTask.title,
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `Reassigned task "${updatedTask.title}" to you`,
+    });
+  }
 
   actionLogger("reassign_task_success", { taskId: updatedTask.id, newAssigneeId: updatedTask.assigneeId });
   revalidatePath("/");

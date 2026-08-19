@@ -75,23 +75,23 @@ export function StatCards({
       {stats.map((stat, i) => (
         <div
           key={i}
-          className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md"
+          className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">{stat.title}</span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-100">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{stat.title}</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 dark:border-slate-700 dark:bg-slate-800">
               {stat.icon}
             </div>
           </div>
           <div className="mt-3 flex items-baseline justify-between">
-            <p className="text-2xl font-bold tracking-tight text-slate-900">{stat.value}</p>
+            <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{stat.value}</p>
             <span
               className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${stat.badgeColor}`}
             >
               {stat.badge}
             </span>
           </div>
-          <p className="mt-2 text-xs text-slate-500">{stat.subtext}</p>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{stat.subtext}</p>
         </div>
       ))}
     </div>

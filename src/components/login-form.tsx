@@ -7,8 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/toast-provider";
-import { loginSchema, LoginInput } from "@/lib/loginSchema";
-import { logger } from "@/lib/logger";
+import { loginSchema, LoginInput } from "@/lib/schemas/loginSchema";
+import { logger } from "@/lib/utils/logger";
 
 const loginLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 

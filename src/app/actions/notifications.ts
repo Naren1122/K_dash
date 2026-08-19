@@ -1,0 +1,31 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/utils/action-utils";
+import {
+  getUserNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "@/lib/data/notifications";
+
+export async function getNotificationsAction() {
+  const user = await getCurrentUser();
+  const notifications = await getUserNotifications(user.id);
+  const unreadCount = notifications.filter((n) => !n.readAt).length;
+
+  return { notifications, unreadCount };
+}
+
+export async function markReadAction(notificationId: string) {
+  const user = await getCurrentUser();
+  await markNotificationAsRead(notificationId, user.id);
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function markAllReadAction() {
+  const user = await getCurrentUser();
+  await markAllNotificationsAsRead(user.id);
+  revalidatePath("/");
+  return { success: true };
+}
