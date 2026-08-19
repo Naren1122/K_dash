@@ -22,43 +22,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const email =
-          typeof credentials?.email === "string"
-            ? credentials.email.trim().toLowerCase()
-            : "";
-        const password =
-          typeof credentials?.password === "string" ? credentials.password : "";
+        try {
+          const email =
+            typeof credentials?.email === "string"
+              ? credentials.email.trim().toLowerCase()
+              : "";
+          const password =
+            typeof credentials?.password === "string" ? credentials.password : "";
 
-        authLogger("authorize_attempt", { email });
+          authLogger("authorize_attempt", { email });
 
-        if (!email || !password) {
-          authLogger("authorize_failed", { reason: "missing_credentials", email });
+          if (!email || !password) {
+            authLogger("authorize_failed", { reason: "missing_credentials", email });
+            return null;
+          }
+
+          const user = await prisma.user.findUnique({ where: { email } });
+
+          if (!user) {
+            authLogger("authorize_failed", { reason: "user_not_found", email });
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(password, user.passwordHash);
+
+          if (!isValid) {
+            authLogger("authorize_failed", { reason: "invalid_password", email });
+            return null;
+          }
+
+          authLogger("authorize_success", { email, userId: user.id, role: user.role });
+
+          // Ensure we are returning exactly what the JWT callback expects
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          // Log at error level so it's visible in production (Vercel logs)
+          console.error("[AUTH] authorize error:", error);
           return null;
         }
-
-        const user = await prisma.user.findUnique({ where: { email } });
-
-        if (!user) {
-          authLogger("authorize_failed", { reason: "user_not_found", email });
-          return null;
-        }
-
-        const isValid = await bcrypt.compare(password, user.passwordHash);
-
-        if (!isValid) {
-          authLogger("authorize_failed", { reason: "invalid_password", email });
-          return null;
-        }
-
-        authLogger("authorize_success", { email, userId: user.id, role: user.role });
-
-        // Ensure we are returning exactly what the JWT callback expects
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
       },
     }),
   ],
