@@ -51,11 +51,11 @@ export function KanbanView({
   const [activeTask, setActiveTask] = useState<BoardTask | null>(null);
   // Optimistic tasks (for immediate visual feedback during drag)
   const [optimisticTasks, setOptimisticTasks] = useState<BoardTask[]>(tasks);
-  const prevTasksRef = useRef<BoardTask[]>(tasks);
+  const [prevTasks, setPrevTasks] = useState<BoardTask[]>(tasks);
 
   // Sync when tasks prop changes (after server revalidation)
-  if (tasks !== prevTasksRef.current) {
-    prevTasksRef.current = tasks;
+  if (tasks !== prevTasks) {
+    setPrevTasks(tasks);
     setOptimisticTasks(tasks);
   }
 
@@ -93,7 +93,7 @@ export function KanbanView({
 
     if (!over) {
       // Revert if dropped nowhere
-      setOptimisticTasks(prevTasksRef.current);
+      setOptimisticTasks(prevTasks);
       return;
     }
 
@@ -105,9 +105,9 @@ export function KanbanView({
     const targetStatus: TaskStatusValue | undefined =
       (overColumn?.status as TaskStatusValue) ?? (overTask?.status as TaskStatusValue);
 
-    const draggedTask = prevTasksRef.current.find((t) => t.id === activeId);
+    const draggedTask = prevTasks.find((t: BoardTask) => t.id === activeId);
     if (!draggedTask || !targetStatus) {
-      setOptimisticTasks(prevTasksRef.current);
+      setOptimisticTasks(prevTasks);
       return;
     }
 

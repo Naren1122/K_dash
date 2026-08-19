@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/types/prisma";
-import type { NotificationType } from "@/generated/prisma/client";
+import type { NotificationType, Prisma } from "@/generated/prisma/client";
 
 export type NotificationPayload = {
   taskId?: string;
@@ -23,7 +23,7 @@ export async function createNotification(
       data: {
         userId,
         type,
-        payload: payload as any,
+        payload: payload as unknown as Prisma.InputJsonValue,
       },
     });
   } catch (error) {

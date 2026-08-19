@@ -17,20 +17,21 @@ const initialState: ThemeProviderState = {
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("kanban_theme") as Theme | null;
+      if (stored === "dark") return "dark";
+    }
+    return "light";
+  });
 
   useEffect(() => {
-    const stored = localStorage.getItem("kanban_theme") as Theme | null;
-    const initialTheme = stored === "dark" ? "dark" : "light";
-    setThemeState(initialTheme);
-    if (initialTheme === "dark") {
+    if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-    setMounted(true);
-  }, []);
+  }, [theme]);
 
   function toggleTheme() {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";

@@ -91,10 +91,11 @@ export function ListView({
     return sortDir === "asc" ? result : -result;
   });
 
-  function SortHeader({ field, label }: { field: SortField; label: string }) {
+  const renderSortHeader = (field: SortField, label: string) => {
     const isActive = sortField === field;
     return (
       <th
+        key={field}
         className="cursor-pointer select-none border-b border-slate-100 dark:border-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition"
         onClick={() => handleSort(field)}
       >
@@ -106,7 +107,7 @@ export function ListView({
         </span>
       </th>
     );
-  }
+  };
 
   if (tasks.length === 0) {
     return (
@@ -122,11 +123,11 @@ export function ListView({
         <table className="w-full min-w-[700px] border-collapse text-sm">
           <thead className="bg-slate-50/80 dark:bg-slate-800/80">
             <tr>
-              <SortHeader field="title" label="Task" />
-              <SortHeader field="status" label="Status" />
-              <SortHeader field="priority" label="Priority" />
-              <SortHeader field="assignee" label="Assignee" />
-              <SortHeader field="dueDate" label="Due Date" />
+              {renderSortHeader("title", "Task")}
+              {renderSortHeader("status", "Status")}
+              {renderSortHeader("priority", "Priority")}
+              {renderSortHeader("assignee", "Assignee")}
+              {renderSortHeader("dueDate", "Due Date")}
               <th className="border-b border-slate-100 dark:border-slate-800 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Labels
               </th>

@@ -39,7 +39,7 @@ export function DraggableTaskCard(props: DraggableTaskCardProps) {
   };
 
   // Filter out aria-describedby which can change between renders
-  const { "aria-describedby": _ariaDesc, ...cleanAttributes } = attributes as Record<string, any>;
+  const { "aria-describedby": _ariaDesc, ...cleanAttributes } = attributes as unknown as Record<string, unknown>;
 
   return (
     <div ref={setNodeRef} style={style} {...cleanAttributes} {...listeners} className="touch-none">

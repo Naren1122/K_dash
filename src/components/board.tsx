@@ -59,20 +59,21 @@ export function Board({
   userName,
   userEmail,
 }: BoardProps) {
-  const [activeView, setActiveView] = useState<ActiveView>("kanban");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [viewingTaskId, setViewingTaskId] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as ActiveView | null;
-    if (savedView && ["kanban", "list", "calendar", "timeline"].includes(savedView)) {
-      setActiveView(savedView);
+  const [activeView, setActiveView] = useState<ActiveView>(() => {
+    if (typeof window !== "undefined") {
+      const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as ActiveView | null;
+      if (savedView && ["kanban", "list", "calendar", "timeline"].includes(savedView)) {
+        return savedView;
+      }
     }
-  }, []);
+    return "kanban";
+  });
+  const { showToast } = useToast();
 
   function handleViewChange(view: ActiveView) {
     setActiveView(view);

@@ -10,7 +10,7 @@ import {
 type NotificationItem = {
   id: string;
   type: string;
-  payload: any;
+  payload: Record<string, unknown>;
   readAt: Date | string | null;
   createdAt: Date | string;
 };
@@ -23,9 +23,29 @@ export function NotificationBell() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
+    let cancelled = false;
+    async function load() {
+      try {
+        const data = await getNotificationsAction();
+        if (!cancelled) {
+          setNotifications(data.notifications as NotificationItem[]);
+          setUnreadCount(data.unreadCount);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+    const interval = setInterval(load, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -38,17 +58,7 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  async function fetchNotifications() {
-    try {
-      const data = await getNotificationsAction();
-      setNotifications(data.notifications as NotificationItem[]);
-      setUnreadCount(data.unreadCount);
-    } catch (err) {
-      console.error("Failed to fetch notifications:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
+
 
   async function handleMarkRead(id: string) {
     setNotifications((prev) =>
@@ -133,7 +143,7 @@ export function NotificationBell() {
                   >
                     <div>
                       <p className="text-xs font-medium text-slate-800 dark:text-slate-200">
-                        {n.payload?.message || n.payload?.taskTitle || "Notification"}
+                        {String(n.payload?.message || n.payload?.taskTitle || "Notification")}
                       </p>
                       <p className="text-[10px] text-slate-400 dark:text-slate-500">{timeStr}</p>
                     </div>
