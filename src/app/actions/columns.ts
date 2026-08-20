@@ -15,6 +15,8 @@ import {
 import { logger } from "@/lib/utils/logger";
 import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/lib/utils/action-utils";
 
+import { notifyAllAdmins } from "@/lib/data/notifications";
+
 const actionLogger = logger.action.bind(logger);
 
 export async function getColumns(boardId?: string) {
@@ -30,7 +32,7 @@ export async function getColumns(boardId?: string) {
 }
 
 export async function createColumn(input: CreateColumnInput) {
-  await requireAdmin();
+  const user = await requireAdmin();
   const data = parseOrThrow(createColumnSchema, input);
 
   actionLogger("create_column_start", { name: data.name, boardId: data.boardId });
@@ -59,13 +61,19 @@ export async function createColumn(input: CreateColumnInput) {
     throw e;
   });
 
+  await notifyAllAdmins("TASK_STATUS_CHANGED", {
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Admin"} created column "${column.name}"`,
+  });
+
   actionLogger("create_column_success", { columnId: column.id });
   revalidatePath("/");
   return column;
 }
 
 export async function updateColumn(input: UpdateColumnInput) {
-  await requireAdmin();
+  const user = await requireAdmin();
   const data = parseOrThrow(updateColumnSchema, input);
 
   actionLogger("update_column_start", { columnId: data.columnId });
@@ -83,13 +91,19 @@ export async function updateColumn(input: UpdateColumnInput) {
     },
   });
 
+  await notifyAllAdmins("TASK_STATUS_CHANGED", {
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Admin"} updated column "${updated.name}"`,
+  });
+
   actionLogger("update_column_success", { columnId: updated.id });
   revalidatePath("/");
   return updated;
 }
 
 export async function deleteColumn(columnId: unknown) {
-  await requireAdmin();
+  const user = await requireAdmin();
   const id = parseOrThrow(columnIdSchema, columnId);
 
   actionLogger("delete_column_start", { columnId: id });
@@ -100,6 +114,12 @@ export async function deleteColumn(columnId: unknown) {
   }
 
   await prisma.column.delete({ where: { id } });
+
+  await notifyAllAdmins("TASK_STATUS_CHANGED", {
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Admin"} deleted column "${column.name}"`,
+  });
 
   actionLogger("delete_column_success", { columnId: id });
   revalidatePath("/");

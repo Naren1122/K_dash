@@ -14,7 +14,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { TaskCard } from "@/components/board/task-card";
 import { DroppableColumn } from "@/components/board/droppable-column";
 import type { BoardColumn } from "@/components/board/column-types";

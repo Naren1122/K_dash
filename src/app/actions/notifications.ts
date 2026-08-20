@@ -6,6 +6,8 @@ import {
   getUserNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  deleteNotification,
+  deleteAllNotifications,
 } from "@/lib/data/notifications";
 
 export async function getNotificationsAction() {
@@ -26,6 +28,20 @@ export async function markReadAction(notificationId: string) {
 export async function markAllReadAction() {
   const user = await getCurrentUser();
   await markAllNotificationsAsRead(user.id);
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function deleteNotificationAction(notificationId: string) {
+  const user = await getCurrentUser();
+  await deleteNotification(notificationId, user.id);
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function deleteAllNotificationsAction() {
+  const user = await getCurrentUser();
+  await deleteAllNotifications(user.id);
   revalidatePath("/");
   return { success: true };
 }

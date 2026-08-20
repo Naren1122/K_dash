@@ -13,6 +13,8 @@ import {
 import { logger } from "@/lib/utils/logger";
 import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/lib/utils/action-utils";
 
+import { notifyAllAdmins } from "@/lib/data/notifications";
+
 const actionLogger = logger.action.bind(logger);
 
 export async function getLabels() {
@@ -28,7 +30,7 @@ export async function getLabels() {
 }
 
 export async function createLabel(input: CreateLabelInput) {
-  await requireAdmin();
+  const user = await requireAdmin();
   const { name, color } = parseOrThrow(createLabelSchema, input);
 
   actionLogger("create_label_start", { name, color });
@@ -44,13 +46,19 @@ export async function createLabel(input: CreateLabelInput) {
     select: { id: true, name: true, color: true },
   });
 
+  await notifyAllAdmins("TASK_STATUS_CHANGED", {
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Admin"} created label "${label.name}"`,
+  });
+
   actionLogger("create_label_success", { labelId: label.id });
   revalidatePath("/");
   return label;
 }
 
 export async function updateLabel(input: UpdateLabelInput) {
-  await requireAdmin();
+  const user = await requireAdmin();
   const data = parseOrThrow(updateLabelSchema, input);
   const id = data.id;
 
@@ -70,14 +78,22 @@ export async function updateLabel(input: UpdateLabelInput) {
     select: { id: true, name: true, color: true },
   });
 
+  await notifyAllAdmins("TASK_STATUS_CHANGED", {
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Admin"} updated label "${label.name}"`,
+  });
+
   actionLogger("update_label_success", { labelId: label.id });
   revalidatePath("/");
   return label;
 }
 
 export async function deleteLabel(labelId: unknown) {
-  await requireAdmin();
+  const user = await requireAdmin();
   const id = parseOrThrow(labelIdSchema, labelId);
+
+  const existing = await prisma.label.findUnique({ where: { id } });
 
   const labels = await prisma.label.deleteMany({
     where: { id },
@@ -87,6 +103,12 @@ export async function deleteLabel(labelId: unknown) {
     actionLogger("delete_label_not_found", { labelId: id });
     throw new ActionError(404, "Label not found");
   }
+
+  await notifyAllAdmins("TASK_STATUS_CHANGED", {
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Admin"} deleted label "${existing?.name || "Label"}"`,
+  });
 
   actionLogger("delete_label_success", { labelId: id });
   revalidatePath("/");

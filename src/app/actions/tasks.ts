@@ -24,7 +24,7 @@ import {
 } from "@/lib/utils/action-utils";
 
 import { createActivityLog } from "@/lib/data/activity";
-import { createNotification } from "@/lib/data/notifications";
+import { notifyTaskStakeholders } from "@/lib/data/notifications";
 
 const actionLogger = logger.action.bind(logger);
 
@@ -103,15 +103,18 @@ export async function createTask(input: CreateTaskInput) {
     newValue: title,
   });
 
-  if (assigneeId) {
-    await createNotification(assigneeId, "TASK_ASSIGNED", {
+  await notifyTaskStakeholders(
+    task.id,
+    "TASK_ASSIGNED",
+    {
       taskId: task.id,
       taskTitle: title,
       actorId: user.id,
       actorName: (user.name || user.email || undefined) as string | undefined,
-      message: `Assigned task "${title}" to you`,
-    });
-  }
+      message: `${user.name || user.email || "Someone"} created task "${title}"${assigneeId ? " and assigned it" : ""}`,
+    },
+    [assigneeId]
+  );
 
   actionLogger("create_task_success", { taskId: task.id, userId: user.id });
   revalidatePath("/");
@@ -158,6 +161,14 @@ export async function updateTask(input: UpdateTaskData) {
     field: Object.keys(patch).join(", "),
   });
 
+  await notifyTaskStakeholders(task.id, "TASK_STATUS_CHANGED", {
+    taskId: task.id,
+    taskTitle: data.title || task.title,
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Someone"} updated task "${data.title || task.title}"`,
+  }, [patch.assigneeId]);
+
   actionLogger("update_task_success", { taskId: updatedTask.id, userId: user.id });
   revalidatePath("/");
   return updatedTask;
@@ -189,15 +200,13 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput) {
     newValue: status,
   });
 
-  if (updatedTask.assigneeId) {
-    await createNotification(updatedTask.assigneeId, "TASK_STATUS_CHANGED", {
-      taskId: task.id,
-      taskTitle: updatedTask.title,
-      actorId: user.id,
-      actorName: (user.name || user.email || undefined) as string | undefined,
-      message: `Changed status of "${updatedTask.title}" to ${status}`,
-    });
-  }
+  await notifyTaskStakeholders(task.id, "TASK_STATUS_CHANGED", {
+    taskId: task.id,
+    taskTitle: updatedTask.title,
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Someone"} changed status of "${updatedTask.title}" to ${status}`,
+  });
 
   actionLogger("update_task_status_success", { taskId: updatedTask.id, status: updatedTask.status, userId: user.id });
   revalidatePath("/");
@@ -231,15 +240,13 @@ export async function reassignTask(input: ReassignTaskInput) {
     newValue: assigneeId || undefined,
   });
 
-  if (assigneeId) {
-    await createNotification(assigneeId, "TASK_ASSIGNED", {
-      taskId: task.id,
-      taskTitle: updatedTask.title,
-      actorId: user.id,
-      actorName: (user.name || user.email || undefined) as string | undefined,
-      message: `Reassigned task "${updatedTask.title}" to you`,
-    });
-  }
+  await notifyTaskStakeholders(task.id, "TASK_ASSIGNED", {
+    taskId: task.id,
+    taskTitle: updatedTask.title,
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `Reassigned task "${updatedTask.title}" to ${assigneeId ? "a team member" : "Unassigned"}`,
+  }, [assigneeId]);
 
   actionLogger("reassign_task_success", { taskId: updatedTask.id, newAssigneeId: updatedTask.assigneeId });
   revalidatePath("/");
@@ -248,9 +255,23 @@ export async function reassignTask(input: ReassignTaskInput) {
 
 export async function deleteTask(taskId: unknown) {
   await requireAdmin();
+  const user = await getCurrentUser();
   const task = await getTaskOrThrow(taskId);
 
   actionLogger("delete_task_start", { taskId: task.id });
+
+  await notifyTaskStakeholders(
+    task.id,
+    "TASK_STATUS_CHANGED",
+    {
+      taskId: task.id,
+      taskTitle: task.title,
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `${user.name || user.email || "Someone"} deleted task "${task.title}"`,
+    },
+    [task.assigneeId, task.createdById]
+  );
 
   await prisma.task.delete({ where: { id: task.id } });
   actionLogger("delete_task_success", { taskId: task.id });

@@ -60,14 +60,14 @@ export function BoardHeader({
           {isAdmin ? (
             <Link
               href="/admin/analytics"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:border-slate-700 dark:hover:text-white"
             >
               📈 Analytics
             </Link>
           ) : null}
 
           {/* View Switcher Tabs */}
-          <div className="inline-flex max-w-full overflow-x-auto rounded-xl bg-slate-100 p-1 border border-slate-200/80 shadow-inner shrink-0 dark:border-slate-800 dark:bg-slate-900">
+          <div className="inline-flex max-w-full overflow-x-auto rounded-xl bg-slate-100 p-1 border border-slate-200 shadow-xs shrink-0 dark:border-slate-800 dark:bg-slate-800/80">
             {([
               { id: "kanban", icon: "📋", label: "Kanban" },
               { id: "list", icon: "📝", label: "List" },
@@ -78,10 +78,10 @@ export function BoardHeader({
                 key={view.id}
                 type="button"
                 onClick={() => onViewChange(view.id)}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition shrink-0 cursor-pointer ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer ${
                   activeView === view.id
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white"
-                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 {view.icon} {view.label}
@@ -91,11 +91,11 @@ export function BoardHeader({
 
           {isAdmin ? (
             <button
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300 dark:bg-sky-600 dark:hover:bg-sky-500 dark:focus:ring-sky-900 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] focus:outline-none cursor-pointer"
               onClick={onToggleCreateForm}
               type="button"
             >
-              <span className="text-base leading-none">+</span>
+              <span className="text-base leading-none font-bold">+</span>
               {showCreateForm ? "Close Form" : "Create Task"}
             </button>
           ) : null}
@@ -103,19 +103,19 @@ export function BoardHeader({
       </div>
 
       {/* Filter and Sorting Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Filters:</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Filters:</span>
 
           {/* Multi-select Label Filter Dropdown */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowLabelDropdown((prev) => !prev)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition cursor-pointer shadow-xs ${
                 selectedLabelIds.length > 0
-                  ? "border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-300"
-                  : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  ? "border-indigo-300 bg-indigo-50 text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 dark:hover:border-slate-600"
               }`}
             >
               🏷️ Labels {selectedLabelIds.length > 0 ? `(${selectedLabelIds.length})` : ""}
@@ -123,7 +123,7 @@ export function BoardHeader({
             </button>
 
             {showLabelDropdown ? (
-              <div className="absolute left-0 top-full z-30 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5 dark:border-slate-800 dark:bg-slate-900">
+              <div className="absolute left-0 top-full z-30 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900">
                 <div className="mb-2 flex items-center justify-between px-2 pt-1 border-b border-slate-100 dark:border-slate-800 pb-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     Filter by Label
@@ -135,7 +135,7 @@ export function BoardHeader({
                         onClearLabelFilter();
                         setShowLabelDropdown(false);
                       }}
-                      className="text-[10px] font-bold text-sky-600 hover:underline dark:text-sky-400"
+                      className="text-[10px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
                     >
                       Clear all
                     </button>
@@ -147,13 +147,13 @@ export function BoardHeader({
                     return (
                       <label
                         key={label.id}
-                        className="flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-200"
+                        className="flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-slate-700 dark:text-slate-200"
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => onToggleLabelFilter(label.id)}
-                          className="h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-800"
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-800"
                         />
                         <span
                           className="h-2.5 w-2.5 rounded-full shrink-0"
@@ -175,7 +175,7 @@ export function BoardHeader({
           <select
             value={dueDateFilter}
             onChange={(e) => onDueDateFilterChange(e.target.value as DueDateFilterOption)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-900 cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-white focus:border-sky-500 focus:bg-white dark:border-slate-700 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500 dark:hover:bg-slate-600 dark:focus:bg-slate-700 cursor-pointer"
           >
             <option value="all">📅 All Due Dates</option>
             <option value="overdue">🚨 Overdue</option>
@@ -188,11 +188,11 @@ export function BoardHeader({
 
         {/* Sort Selector */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Sort by:</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">Sort by:</span>
           <select
             value={sortBy}
             onChange={(e) => onSortByChange(e.target.value as SortOption)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-900 cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-white focus:border-sky-500 focus:bg-white dark:border-slate-700 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500 dark:hover:bg-slate-600 dark:focus:bg-slate-700 cursor-pointer"
           >
             <option value="priority_desc">🔥 Priority: High → Low</option>
             <option value="priority_asc">Priority: Low → High</option>

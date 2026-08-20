@@ -26,11 +26,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // After hydration, read the stored theme and apply it
   useEffect(() => {
     const stored = localStorage.getItem("kanban_theme") as Theme | null;
-    if (stored === "dark") {
-      setThemeState("dark");
-      document.documentElement.classList.add("dark");
-    }
-    setMounted(true);
+    const raf = requestAnimationFrame(() => {
+      if (stored === "dark") {
+        setThemeState("dark");
+        document.documentElement.classList.add("dark");
+      }
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   useEffect(() => {

@@ -15,7 +15,7 @@ import { logger } from "@/lib/utils/logger";
 import { ActionError, getCurrentUser, getTaskOrThrow, parseOrThrow } from "@/lib/utils/action-utils";
 
 import { createActivityLog } from "@/lib/data/activity";
-import { createNotification } from "@/lib/data/notifications";
+import { notifyTaskStakeholders } from "@/lib/data/notifications";
 
 const actionLogger = logger.action.bind(logger);
 
@@ -25,6 +25,11 @@ export async function createComment(input: CreateCommentInput) {
   const user = await getCurrentUser();
   const { taskId, content } = parseOrThrow(createCommentSchema, input);
   const task = await getTaskOrThrow(taskId);
+
+  if (user.role === Role.MEMBER && task.assigneeId !== user.id && task.assigneeId !== null) {
+    actionLogger("comment_permission_failed", { taskId, userId: user.id });
+    throw new ActionError(403, "You can only comment on tasks assigned to you or unassigned tasks");
+  }
 
   actionLogger("create_comment_start", { taskId, userId: user.id });
 
@@ -40,15 +45,13 @@ export async function createComment(input: CreateCommentInput) {
     newValue: content.slice(0, 100),
   });
 
-  if (task.assigneeId) {
-    await createNotification(task.assigneeId, "TASK_COMMENTED", {
-      taskId,
-      taskTitle: task.title,
-      actorId: user.id,
-      actorName: (user.name || user.email || undefined) as string | undefined,
-      message: `Commented: "${content.slice(0, 50)}..."`,
-    });
-  }
+  await notifyTaskStakeholders(taskId, "TASK_COMMENTED", {
+    taskId,
+    taskTitle: task.title,
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Someone"} commented on "${task.title}": "${content.slice(0, 50)}${content.length > 50 ? "..." : ""}"`,
+  });
 
   actionLogger("create_comment_success", { commentId: comment.id, taskId });
   revalidatePath("/");
@@ -64,7 +67,7 @@ export async function updateComment(input: UpdateCommentInput) {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { id: true, authorId: true, createdAt: true },
+    select: { id: true, authorId: true, taskId: true, createdAt: true },
   });
 
   if (!comment) {
@@ -91,6 +94,13 @@ export async function updateComment(input: UpdateCommentInput) {
     select: { id: true, content: true, updatedAt: true },
   });
 
+  await notifyTaskStakeholders(comment.taskId, "TASK_COMMENTED", {
+    taskId: comment.taskId,
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Someone"} edited a comment on task`,
+  });
+
   actionLogger("update_comment_success", { commentId });
   revalidatePath("/");
   return {
@@ -105,7 +115,7 @@ export async function deleteComment(commentId: unknown) {
 
   const comment = await prisma.comment.findUnique({
     where: { id },
-    select: { id: true, authorId: true },
+    select: { id: true, authorId: true, taskId: true },
   });
 
   if (!comment) {
@@ -119,6 +129,14 @@ export async function deleteComment(commentId: unknown) {
   }
 
   actionLogger("delete_comment_start", { commentId: id, userId: user.id });
+
+  await notifyTaskStakeholders(comment.taskId, "TASK_COMMENTED", {
+    taskId: comment.taskId,
+    actorId: user.id,
+    actorName: (user.name || user.email || undefined) as string | undefined,
+    message: `${user.name || user.email || "Someone"} deleted a comment on task`,
+  });
+
   await prisma.comment.delete({ where: { id } });
   actionLogger("delete_comment_success", { commentId: id });
   revalidatePath("/");

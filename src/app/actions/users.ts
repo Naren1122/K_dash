@@ -1,0 +1,97 @@
+"use server";
+
+import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
+
+import { createUserSchema, CreateUserInput } from "@/lib/schemas/userSchema";
+import { logger } from "@/lib/utils/logger";
+import {
+  ActionError,
+  parseOrThrow,
+  requireAdmin,
+} from "@/lib/utils/action-utils";
+import {
+  createUserInDb,
+  findUserByEmail,
+  findUserById,
+  countAdminUsers,
+  deleteUserInDb,
+} from "@/lib/data/users";
+
+const actionLogger = logger.action.bind(logger);
+
+export async function createUser(input: CreateUserInput) {
+  const admin = await requireAdmin();
+  const { name, email, password, role } = parseOrThrow(createUserSchema, input);
+
+  actionLogger("create_user_start", { adminId: admin.id, email, role });
+
+  // Enforce single admin rule
+  if (role === "ADMIN") {
+    const adminCount = await countAdminUsers();
+    if (adminCount >= 1) {
+      actionLogger("create_user_admin_limit_reached", { adminCount });
+      throw new ActionError(400, "There can only be 1 administrator in the system");
+    }
+  }
+
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    actionLogger("create_user_conflict", { email });
+    throw new ActionError(409, "A user with this email already exists");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  const newUser = await createUserInDb({
+    name: name?.trim() || null,
+    email,
+    passwordHash,
+    role,
+  });
+
+  actionLogger("create_user_success", {
+    createdUserId: newUser.id,
+    email: newUser.email,
+    role: newUser.role,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+
+  return {
+    ...newUser,
+    createdAt: newUser.createdAt.toISOString(),
+  };
+}
+
+export async function deleteUser(userId: string) {
+  const admin = await requireAdmin();
+
+  if (userId === admin.id) {
+    actionLogger("delete_user_self_attempt", { adminId: admin.id });
+    throw new ActionError(400, "You cannot delete your own admin account");
+  }
+
+  const target = await findUserById(userId);
+  if (!target) {
+    actionLogger("delete_user_not_found", { userId });
+    throw new ActionError(404, "User not found");
+  }
+
+  if (target.role === "ADMIN") {
+    actionLogger("delete_user_admin_attempt", { userId });
+    throw new ActionError(403, "Administrator accounts cannot be deleted");
+  }
+
+  actionLogger("delete_user_start", { adminId: admin.id, userId, targetEmail: target.email });
+
+  await deleteUserInDb(userId, admin.id);
+
+  actionLogger("delete_user_success", { userId });
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+
+  return { success: true };
+}

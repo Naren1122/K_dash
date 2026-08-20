@@ -121,11 +121,11 @@ export function TaskDetail({
       aria-labelledby="task-detail-heading"
     >
       <div
-        className={`flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_30px_60px_-20px_rgba(15,23,42,0.5)] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:border-slate-800 dark:bg-slate-900 ${
+        className={`flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:border-slate-700 dark:bg-slate-900/95 ${
           visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
         }`}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 p-5">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-700/80 p-5">
           <div className="min-w-0">
             <h2
               className="truncate text-lg font-bold text-slate-900 dark:text-white"
@@ -142,9 +142,8 @@ export function TaskDetail({
             </div>
           </div>
           <button
-            ref={closeRef}
             aria-label="Close task details"
-            className="shrink-0 rounded-xl px-2.5 py-1.5 text-sm font-bold text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-500 shadow-2xs transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-rose-950/40 dark:hover:border-rose-800 dark:hover:text-rose-300 cursor-pointer"
             onClick={onClose}
             type="button"
           >
@@ -152,27 +151,10 @@ export function TaskDetail({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Description</h3>
-            {task.description ? (
-              <p className="mt-1.5 whitespace-pre-line text-sm leading-6 text-slate-700 dark:text-slate-300">
-                {task.description}
-              </p>
-            ) : (
-              <p className="mt-1.5 text-sm italic text-slate-400 dark:text-slate-500">No description added.</p>
-            )}
-          </div>
-
+        <div className="flex-1 overflow-y-auto p-5 md:p-6">
           {canEdit ? (
-            <form
-              className="mt-6 grid gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4 sm:grid-cols-2 dark:border-slate-800 dark:bg-slate-800/40"
-              onSubmit={handleSubmit((data) => onUpdate(task.id, data))}
-            >
+            <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit((data) => onUpdate(task.id, data))}>
               <div className="sm:col-span-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Edit task</h3>
-              </div>
-              <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Title
                   <Input maxLength={200} {...register("title")} />
@@ -181,60 +163,60 @@ export function TaskDetail({
                   <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.title.message}</p>
                 ) : null}
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Assign to
-                  <Select disabled={!isAdmin} {...register("assigneeId")}>
-                    <option value="">Unassigned</option>
-                    {assignee.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name ?? a.email}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Priority
-                  <Select disabled={!isAdmin} {...register("priority")}>
-                    {PRIORITY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-                {!isAdmin ? (
-                  <p className="mt-1 text-[10px] font-medium text-slate-400">
-                    Only administrators can change priority.
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700">
-                  Due date
-                  <Input type="date" {...register("dueDate")} />
-                </label>
-              </div>
+
+              {isAdmin ? (
+                <>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Assignee
+                    <Select {...register("assigneeId")}>
+                      <option value="">Unassigned</option>
+                      {assignee.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name ?? a.email}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Priority
+                    <Select {...register("priority")}>
+                      {PRIORITY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                </>
+              ) : null}
+
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Due date
+                <Input type="date" {...register("dueDate")} />
+              </label>
+
               <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-700">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Description
-                  <Textarea maxLength={2000} {...register("description")} />
+                  <Textarea
+                    maxLength={2000}
+                    placeholder="Add useful context, expected outcome, or dependencies..."
+                    {...register("description")}
+                  />
                 </label>
                 {errors.description ? (
-                  <p className="mt-1 text-xs font-medium text-red-600">
+                  <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
                     {errors.description.message}
                   </p>
                 ) : null}
               </div>
               <div className="sm:col-span-2">
-                <span className="text-xs font-semibold text-slate-700">Labels</span>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Labels</span>
                 <LabelPicker labels={labels} selected={labelIds} onToggle={toggleLabel} />
               </div>
               {error ? (
                 <p
-                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 sm:col-span-2"
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300 sm:col-span-2"
                   role="alert"
                 >
                   {error}
@@ -242,7 +224,7 @@ export function TaskDetail({
               ) : null}
               <div className="flex justify-end sm:col-span-2">
                 <button
-                  className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   disabled={isPending || isSubmitting}
                   type="submit"
                 >
@@ -251,9 +233,9 @@ export function TaskDetail({
               </div>
             </form>
           ) : (
-            <div className="mt-6 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Assignee</h3>
-              <p className="mt-1.5 text-sm font-semibold text-slate-800">
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">Assignee</h3>
+              <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
                 {task.assignee ? task.assignee.name ?? task.assignee.email : "Unassigned"}
               </p>
             </div>
@@ -269,9 +251,9 @@ export function TaskDetail({
             taskId={task.id}
           />
 
-          <div className="mt-8 border-t border-slate-200/80 pt-6">
-            <h3 className="text-sm font-bold text-slate-900">Activity Log</h3>
-            <p className="text-xs text-slate-500">History of changes for this task</p>
+          <div className="mt-8 border-t border-slate-200 dark:border-slate-700/80 pt-6">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Activity Log</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">History of changes for this task</p>
             <ActivityFeed taskId={task.id} />
           </div>
         </div>

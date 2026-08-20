@@ -62,7 +62,7 @@ export async function getTaskOrThrow(taskId: unknown) {
   const id = parseOrThrow(taskIdSchema, taskId);
   const task = await prisma.task.findUnique({
     where: { id },
-    select: { id: true, assigneeId: true, title: true, status: true },
+    select: { id: true, assigneeId: true, title: true, status: true, createdById: true },
   });
 
   if (!task) {

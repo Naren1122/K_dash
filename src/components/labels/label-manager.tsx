@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -12,6 +12,7 @@ import {
   labelColors,
 } from "@/lib/schemas/labelSchema";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import type { Label } from "@/components/board/types";
 import { useToast } from "@/components/toast-provider";
 
@@ -24,6 +25,16 @@ export function LabelManager({ labels }: LabelManagerProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+
+  const totalPages = Math.max(1, Math.ceil(labels.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+
+  const paginatedLabels = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return labels.slice(start, start + pageSize);
+  }, [labels, safePage, pageSize]);
 
   const {
     register,
@@ -163,7 +174,7 @@ export function LabelManager({ labels }: LabelManagerProps) {
             No labels yet. Add your first one above.
           </li>
         ) : (
-          labels.map((label) => (
+          paginatedLabels.map((label) => (
             <li
               className="flex items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-800/40 px-3.5 py-2.5"
               key={label.id}
@@ -198,6 +209,15 @@ export function LabelManager({ labels }: LabelManagerProps) {
           ))
         )}
       </ul>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalItems={labels.length}
+        pageSize={pageSize}
+      />
     </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 type TaskExport = {
   id: string;
@@ -40,14 +41,13 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="text-xs font-bold text-slate-500 hover:text-slate-800 transition dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              ← Back to Board
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="group mb-2.5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 hover:shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-1" />
+            <span>Back to Board</span>
+          </Link>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
             Analytics & Reports
           </h1>
@@ -59,27 +59,47 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Tasks</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Tasks</p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 text-xs font-bold">
+              📊
+            </span>
+          </div>
           <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">{metrics.total}</p>
-          <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">{completionRate}% completed</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{completionRate}% completed</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">In Progress (WIP)</p>
-          <p className="mt-2 text-3xl font-extrabold text-amber-600 dark:text-amber-400">{metrics.inProgress}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">In Progress (WIP)</p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 text-xs font-bold">
+              ⚡
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">{metrics.inProgress}</p>
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">Active tasks being worked on</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Completed Tasks</p>
-          <p className="mt-2 text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{metrics.done}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Completed Tasks</p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 text-xs font-bold">
+              ✓
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">{metrics.done}</p>
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">Finished throughput</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Overdue Tasks</p>
-          <p className="mt-2 text-3xl font-extrabold text-red-600 dark:text-red-400">{metrics.overdue}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Overdue Tasks</p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60 text-xs font-bold">
+              🚨
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">{metrics.overdue}</p>
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">Passed target due date</p>
         </div>
       </div>
@@ -87,45 +107,45 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
       {/* Visual Distributions */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Status Distribution */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">Status Distribution</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Breakdown of tasks by status column</p>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
+              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                 <span>To Do ({metrics.todo})</span>
-                <span>{metrics.total > 0 ? Math.round((metrics.todo / metrics.total) * 100) : 0}%</span>
+                <span className="font-bold text-slate-600 dark:text-slate-400">{metrics.total > 0 ? Math.round((metrics.todo / metrics.total) * 100) : 0}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full bg-slate-400 rounded-full"
+                  className="h-full bg-slate-400 dark:bg-slate-500 rounded-full transition-all duration-500"
                   style={{ width: `${metrics.total > 0 ? (metrics.todo / metrics.total) * 100 : 0}%` }}
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
+              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                 <span>In Progress ({metrics.inProgress})</span>
-                <span>{metrics.total > 0 ? Math.round((metrics.inProgress / metrics.total) * 100) : 0}%</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">{metrics.total > 0 ? Math.round((metrics.inProgress / metrics.total) * 100) : 0}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full bg-amber-500 rounded-full"
+                  className="h-full bg-amber-500 rounded-full transition-all duration-500"
                   style={{ width: `${metrics.total > 0 ? (metrics.inProgress / metrics.total) * 100 : 0}%` }}
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
+              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                 <span>Done ({metrics.done})</span>
-                <span>{metrics.total > 0 ? Math.round((metrics.done / metrics.total) * 100) : 0}%</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{metrics.total > 0 ? Math.round((metrics.done / metrics.total) * 100) : 0}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full bg-emerald-500 rounded-full"
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                   style={{ width: `${metrics.total > 0 ? (metrics.done / metrics.total) * 100 : 0}%` }}
                 />
               </div>
@@ -134,19 +154,19 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
         </div>
 
         {/* Priority Distribution */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">Priority Distribution</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Breakdown of tasks by priority level</p>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             <div>
-              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
+              <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                 <span>Critical ({metrics.priority.critical})</span>
-                <span>{metrics.total > 0 ? Math.round((metrics.priority.critical / metrics.total) * 100) : 0}%</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">{metrics.total > 0 ? Math.round((metrics.priority.critical / metrics.total) * 100) : 0}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full bg-red-500 rounded-full"
+                  className="h-full bg-rose-500 rounded-full transition-all duration-500"
                   style={{ width: `${metrics.total > 0 ? (metrics.priority.critical / metrics.total) * 100 : 0}%` }}
                 />
               </div>

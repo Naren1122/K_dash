@@ -1,4 +1,4 @@
-import { Priority } from "@/generated/prisma/client";
+import type { PriorityValue as Priority } from "@/lib/schemas/taskSchema";
 
 export const PRIORITY_WEIGHTS: Record<Priority, number> = {
   CRITICAL: 4,

@@ -24,25 +24,25 @@ function addDays(d: Date, n: number): Date {
 const PRIORITY_ACCENTS: Record<string, { stripe: string; bg: string; text: string; tag: string }> = {
   CRITICAL: {
     stripe: "bg-red-500",
-    bg: "bg-white border-slate-200/80",
+    bg: "bg-white border-slate-200",
     text: "text-slate-900",
     tag: "🔴 Critical",
   },
   HIGH: {
     stripe: "bg-amber-500",
-    bg: "bg-white border-slate-200/80",
+    bg: "bg-white border-slate-200",
     text: "text-slate-900",
     tag: "📙 High",
   },
   MEDIUM: {
     stripe: "bg-violet-500",
-    bg: "bg-white border-slate-200/80",
+    bg: "bg-white border-slate-200",
     text: "text-slate-900",
     tag: "🌱 Medium",
   },
   LOW: {
     stripe: "bg-emerald-500",
-    bg: "bg-white border-slate-200/80",
+    bg: "bg-white border-slate-200",
     text: "text-slate-900",
     tag: "🔹 Low",
   },
@@ -117,16 +117,15 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
       widthPx: number;
     }[] = [];
 
+    const TASK_WIDTH_PX = 220;
+
     for (const task of sorted) {
       const created = startOfDay(new Date(task.createdAt));
-      const due = task.dueDate ? startOfDay(new Date(task.dueDate)) : addDays(created, 4);
-
       const startOffset = Math.round((created.getTime() - rangeStart.getTime()) / DAY_MS);
-      const duration = Math.max(1, Math.round((due.getTime() - created.getTime()) / DAY_MS) + 1);
 
       const leftPx = startOffset * dayWidth;
-      const widthPx = Math.max(220, duration * dayWidth);
-      const rightPx = leftPx + widthPx + 24;
+      const widthPx = TASK_WIDTH_PX;
+      const rightPx = leftPx + widthPx + 20;
 
       let rowIndex = 0;
       while (rowIndex < rowEnds.length && rowEnds[rowIndex] > leftPx) {
@@ -151,11 +150,16 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
   const rowHeight = 76;
 
   return (
-    <section aria-label="Timeline View" className="mt-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section aria-label="Timeline View" className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
       {/* Header Info */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Timeline</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 text-xs font-bold">
+              📊
+            </span>
+            Timeline
+          </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Detailed visual representation of your project&apos;s journey, key milestones, and task schedules.
           </p>
@@ -168,7 +172,7 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
               <div
                 key={user.id}
                 title={user.name || user.email}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900 shadow-xs"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 dark:bg-slate-700 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900 shadow-xs"
               >
                 {(user.name || user.email).charAt(0).toUpperCase()}
               </div>
@@ -186,16 +190,16 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
         <div className="flex flex-wrap items-center gap-3">
           {/* Day / Week / Month Switcher */}
-          <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200/80 shadow-xs dark:border-slate-800 dark:bg-slate-950">
+          <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 shadow-xs dark:border-slate-800 dark:bg-slate-800/80">
             {(["day", "week", "month"] as const).map((z) => (
               <button
                 key={z}
                 type="button"
                 onClick={() => setZoom(z)}
-                className={`rounded-lg px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                className={`rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer ${
                   zoom === z
-                    ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white"
-                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 {z.charAt(0).toUpperCase() + z.slice(1)}
@@ -204,11 +208,11 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
           </div>
 
           {/* Range Picker Navigator */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/80 px-2 py-1 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200">
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-200 shadow-xs">
             <button
               type="button"
               onClick={() => setOffsetDays((p) => p - (zoom === "day" ? 7 : zoom === "week" ? 14 : 30))}
-              className="px-1 text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+              className="px-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition cursor-pointer"
               aria-label="Previous date range"
             >
               ‹
@@ -217,7 +221,7 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
             <button
               type="button"
               onClick={() => setOffsetDays((p) => p + (zoom === "day" ? 7 : zoom === "week" ? 14 : 30))}
-              className="px-1 text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+              className="px-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition cursor-pointer"
               aria-label="Next date range"
             >
               ›
@@ -236,7 +240,7 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
               aria-checked={showDone}
               onClick={() => setShowDone(!showDone)}
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
-                showDone ? "bg-slate-900 dark:bg-sky-600" : "bg-slate-300 dark:bg-slate-700"
+                showDone ? "bg-indigo-600 dark:bg-indigo-500" : "bg-slate-300 dark:bg-slate-700"
               }`}
             >
               <span
@@ -252,17 +256,17 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
       {/* Main Timeline Canvas */}
       {tasks.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">No tasks found for timeline display.</p>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-400">No tasks found for timeline display.</p>
         </div>
       ) : (
-        <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-200/80 bg-slate-50/20 dark:border-slate-800 dark:bg-slate-950/40">
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950/60 shadow-xs">
           <div className="relative" style={{ width: canvasWidth }}>
             {/* Tier 1 Header: Months */}
-            <div className="flex border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex border-b border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
               {monthGroups.map((m, idx) => (
                 <div
                   key={idx}
-                  className="border-r border-slate-200/80 dark:border-slate-800 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight"
+                  className="border-r border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight"
                   style={{ width: m.count * dayWidth }}
                 >
                   {m.label}
@@ -271,7 +275,7 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
             </div>
 
             {/* Tier 2 Header: Days */}
-            <div className="flex border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex border-b border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
               {columns.map((col, i) => {
                 const dayLetter = DAY_LETTERS[col.getDay()];
                 const dateNum = col.getDate();
@@ -281,12 +285,12 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                 return (
                   <div
                     key={i}
-                    className={`relative flex flex-col items-center justify-center border-r border-slate-200/50 dark:border-slate-800/80 py-2 text-[11px] ${
-                      isWeekend ? "bg-slate-100/60 dark:bg-slate-800/40" : ""
+                    className={`relative flex flex-col items-center justify-center border-r border-slate-200/70 dark:border-slate-700/80 py-2 text-[11px] ${
+                      isWeekend ? "bg-slate-100/70 dark:bg-slate-800/50" : ""
                     }`}
                     style={{ width: dayWidth }}
                   >
-                    <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase">{dayLetter}</span>
+                    <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-400 uppercase">{dayLetter}</span>
                     <span
                       className={`font-extrabold ${
                         isToday ? "text-violet-600 dark:text-violet-400 text-xs" : "text-slate-800 dark:text-slate-200"
@@ -305,7 +309,7 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
             </div>
 
             {/* Timeline Canvas Body */}
-            <div className="relative bg-slate-50/20 dark:bg-slate-950/20" style={{ height: totalRows * rowHeight + 30 }}>
+            <div className="relative bg-slate-50/40 dark:bg-slate-950/40" style={{ height: totalRows * rowHeight + 30 }}>
               {/* Background Column Grid Lines & Weekend Hatching */}
               <div className="absolute inset-0 flex pointer-events-none">
                 {columns.map((col, i) => {
@@ -315,9 +319,9 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                   return (
                     <div
                       key={i}
-                      className={`border-r border-slate-200/40 dark:border-slate-800/40 h-full ${
-                        isWeekend ? "bg-slate-100/40 dark:bg-slate-800/20" : ""
-                      } ${isToday ? "bg-violet-50/20 dark:bg-violet-950/20" : ""}`}
+                      className={`border-r border-slate-200/50 dark:border-slate-700/50 h-full ${
+                        isWeekend ? "bg-slate-100/50 dark:bg-slate-800/30" : ""
+                      } ${isToday ? "bg-violet-50/30 dark:bg-violet-950/30" : ""}`}
                       style={{ width: dayWidth }}
                     />
                   );
@@ -354,12 +358,12 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                     <button
                       type="button"
                       onClick={() => onViewTask(task)}
-                      className={`relative flex w-full flex-col justify-between rounded-2xl border p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg cursor-pointer ${
+                      className={`relative flex w-full flex-col justify-between rounded-2xl border p-3 text-left shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer ${
                         isGradient
-                          ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 border-violet-400/50 text-white shadow-violet-200/50"
+                          ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 border-violet-400/80 text-white shadow-violet-200/50"
                           : isCompleted
-                          ? "bg-slate-50/90 border-slate-200 dark:bg-slate-900/90 dark:border-slate-800 opacity-75 text-slate-600 dark:text-slate-300"
-                          : `${accent.bg} dark:bg-slate-900 dark:border-slate-700 dark:text-white`
+                          ? "bg-slate-50 border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600 opacity-80 text-slate-600 dark:text-slate-300"
+                          : `${accent.bg} hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600 dark:text-white`
                       }`}
                     >
                       {/* Left vertical accent stripe */}

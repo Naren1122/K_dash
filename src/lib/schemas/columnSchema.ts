@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { TaskStatus } from "@/generated/prisma/client";
-
-export const columnStatusSchema = z.nativeEnum(TaskStatus, {
-  error: () => ({ message: "Invalid status value" }),
+import { taskStatuses } from "./taskSchema";
+ 
+export const columnStatusSchema = z.enum(taskStatuses, {
+  message: "Invalid status value",
 });
 
 export const columnIdSchema = z

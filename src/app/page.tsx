@@ -40,6 +40,12 @@ export default async function Home() {
 
   const results = await Promise.all([
     prisma.task.findMany({
+      where:
+        session.user.role === "ADMIN"
+          ? undefined
+          : {
+              OR: [{ assigneeId: session.user.id }, { assigneeId: null }],
+            },
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,

@@ -70,27 +70,32 @@ export function CreateTaskForm({
 
   return (
     <form
-      className="mt-6 grid gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm md:grid-cols-2 md:p-6"
+      className="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 md:grid-cols-2 md:p-6"
       onSubmit={handleSubmit(submit)}
     >
       <div className="md:col-span-2">
-        <h3 className="text-base font-bold text-slate-900">Create a new task</h3>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600 text-white text-xs font-bold shadow-xs">
+            +
+          </span>
+          Create a new task
+        </h3>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
           Keep it clear, concise, and assign it to a team member when ready.
         </p>
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-slate-700">
+        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
           Task title
           <Input maxLength={200} placeholder="e.g. Review onboarding flow" {...register("title")} />
         </label>
         {errors.title ? (
-          <p className="mt-1 text-xs font-medium text-red-600">{errors.title.message}</p>
+          <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.title.message}</p>
         ) : null}
       </div>
 
-      <label className="text-xs font-semibold text-slate-700">
+      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
         Assign to
         <Select {...register("assigneeId")}>
           <option value="">Leave unassigned</option>
@@ -102,7 +107,7 @@ export function CreateTaskForm({
         </Select>
       </label>
 
-      <label className="text-xs font-semibold text-slate-700">
+      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
         Priority
         <Select {...register("priority")}>
           {PRIORITY_OPTIONS.map((option) => (
@@ -113,13 +118,13 @@ export function CreateTaskForm({
         </Select>
       </label>
 
-      <label className="text-xs font-semibold text-slate-700">
+      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
         Due date
         <Input type="date" {...register("dueDate")} />
       </label>
 
       <div className="md:col-span-2">
-        <label className="text-xs font-semibold text-slate-700">
+        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
           Description
           <Textarea
             maxLength={2000}
@@ -128,18 +133,18 @@ export function CreateTaskForm({
           />
         </label>
         {errors.description ? (
-          <p className="mt-1 text-xs font-medium text-red-600">{errors.description.message}</p>
+          <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.description.message}</p>
         ) : null}
       </div>
 
       <div className="md:col-span-2">
-        <span className="text-xs font-semibold text-slate-700">Labels</span>
+        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Labels</span>
         <LabelPicker labels={labels} selected={labelIds} onToggle={toggleLabel} />
       </div>
 
       {error ? (
         <p
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 md:col-span-2"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300 md:col-span-2"
           role="alert"
         >
           {error}
@@ -148,7 +153,7 @@ export function CreateTaskForm({
 
       <div className="flex justify-end md:col-span-2">
         <button
-          className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           disabled={isPending || isSubmitting}
           type="submit"
         >

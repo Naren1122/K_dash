@@ -30,7 +30,6 @@ import {
 } from "@/lib/utils/taskFilterSort";
 
 const VIEW_STORAGE_KEY = "kanban_active_view";
-const PAGE_SIZE = 3;
 
 type ActiveView = "kanban" | "list" | "calendar" | "timeline";
 
@@ -64,16 +63,16 @@ export function Board({
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [activeView, setActiveView] = useState<ActiveView>(() => {
-    if (typeof window !== "undefined") {
-      const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as ActiveView | null;
-      if (savedView && ["kanban", "list", "calendar", "timeline"].includes(savedView)) {
-        return savedView;
-      }
-    }
-    return "kanban";
-  });
+  const [activeView, setActiveView] = useState<ActiveView>("kanban");
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as ActiveView | null;
+    if (savedView && ["kanban", "list", "calendar", "timeline"].includes(savedView)) {
+      const raf = requestAnimationFrame(() => setActiveView(savedView));
+      return () => cancelAnimationFrame(raf);
+    }
+  }, []);
 
   function handleViewChange(view: ActiveView) {
     setActiveView(view);
@@ -86,7 +85,7 @@ export function Board({
   const [dueDateFilter, setDueDateFilter] = useState<DueDateFilterOption>("all");
   const [sortBy, setSortBy] = useState<SortOption>("priority_desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(3);
+  const [pageSize] = useState(3);
 
   const isAdmin = role === "ADMIN";
   const myTasks = tasks.filter((task) => task.assignee?.id === userId).length;
@@ -233,19 +232,34 @@ export function Board({
 
       {/* Metrics Banner */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Tasks</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{tasks.length}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Tasks</p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 text-xs font-bold">
+              📊
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{tasks.length}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">In Progress</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400">{inProgressCount}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">In Progress</p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 text-xs font-bold">
+              ⚡
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{inProgressCount}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            {isAdmin ? "Completed" : "Assigned to You"}
-          </p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {isAdmin ? "Completed" : "Assigned to You"}
+            </p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 text-xs font-bold">
+              ✓
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {isAdmin ? doneCount : myTasks}
           </p>
         </div>
@@ -311,12 +325,12 @@ export function Board({
       )}
 
       {/* Centered Board Pagination Bar - Always displayed */}
-      <div className="flex items-center justify-center gap-1 rounded-2xl border border-slate-200/80 bg-white px-5 py-3 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-xs dark:border-slate-700 dark:bg-slate-800">
         <button
           type="button"
           disabled={safePage <= 1}
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
           aria-label="Previous Page"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -331,8 +345,8 @@ export function Board({
               onClick={() => setCurrentPage(pageItem)}
               className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2.5 text-xs font-bold transition ${
                 safePage === pageItem
-                  ? "bg-slate-100 text-slate-900 font-extrabold shadow-2xs border border-slate-200/60 dark:bg-slate-800 dark:text-white dark:border-slate-700"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                  ? "bg-slate-900 text-white font-extrabold shadow-xs dark:bg-sky-600 dark:text-white"
+                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
               } ${totalPages <= 1 ? "cursor-default" : "cursor-pointer"}`}
             >
               {pageItem}
@@ -348,7 +362,7 @@ export function Board({
           type="button"
           disabled={safePage >= totalPages}
           onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
           aria-label="Next Page"
         >
           <ChevronRight className="h-4 w-4" />
