@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Label } from "@/types/types";
 import type { DueDateFilterOption, SortOption } from "@/utils/taskFilterSort";
-import { NotificationBell } from "@/components/notifications/notification-bell";
 
 type BoardHeaderProps = {
   isAdmin: boolean;
@@ -55,8 +54,6 @@ export function BoardHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <NotificationBell />
-
           {isAdmin ? (
             <Link
               href="/admin/analytics"

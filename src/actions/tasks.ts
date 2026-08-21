@@ -112,8 +112,7 @@ export async function createTask(input: CreateTaskInput) {
       actorId: user.id,
       actorName: (user.name || user.email || undefined) as string | undefined,
       message: `${user.name || user.email || "Someone"} created task "${title}"${assigneeId ? " and assigned it" : ""}`,
-    },
-    [assigneeId]
+    }
   );
 
   actionLogger("create_task_success", { taskId: task.id, userId: user.id });
@@ -167,7 +166,7 @@ export async function updateTask(input: UpdateTaskData) {
     actorId: user.id,
     actorName: (user.name || user.email || undefined) as string | undefined,
     message: `${user.name || user.email || "Someone"} updated task "${data.title || task.title}"`,
-  }, [patch.assigneeId]);
+  });
 
   actionLogger("update_task_success", { taskId: updatedTask.id, userId: user.id });
   revalidatePath("/");
@@ -246,7 +245,7 @@ export async function reassignTask(input: ReassignTaskInput) {
     actorId: user.id,
     actorName: (user.name || user.email || undefined) as string | undefined,
     message: `Reassigned task "${updatedTask.title}" to ${assigneeId ? "a team member" : "Unassigned"}`,
-  }, [assigneeId]);
+  });
 
   actionLogger("reassign_task_success", { taskId: updatedTask.id, newAssigneeId: updatedTask.assigneeId });
   revalidatePath("/");
@@ -269,8 +268,7 @@ export async function deleteTask(taskId: unknown) {
       actorId: user.id,
       actorName: (user.name || user.email || undefined) as string | undefined,
       message: `${user.name || user.email || "Someone"} deleted task "${task.title}"`,
-    },
-    [task.assigneeId, task.createdById]
+    }
   );
 
   await prisma.task.delete({ where: { id: task.id } });

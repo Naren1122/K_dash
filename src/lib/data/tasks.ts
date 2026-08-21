@@ -9,7 +9,7 @@ export const getBoardTasks = cache(
         role === "ADMIN"
           ? undefined
           : {
-              OR: [{ assigneeId: userId }, { assigneeId: null }],
+              assigneeId: userId,
             },
       orderBy: { updatedAt: "desc" },
       select: {

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import type { Role } from "@prisma/client";
 
 interface AppShellProps {
@@ -198,6 +199,9 @@ export function AppShell({ user, children }: AppShellProps) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Notifications Bell */}
+            <NotificationBell />
+
             {/* Theme Toggle Button */}
             <ThemeToggle />
 

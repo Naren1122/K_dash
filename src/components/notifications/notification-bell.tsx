@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Volume2, VolumeX, Clock, MessageSquare, CheckCircle2, UserCheck, Bell } from "lucide-react";
 import {
   getNotificationsAction,
   markReadAction,
   markAllReadAction,
   deleteNotificationAction,
 } from "@/actions/notifications";
+import { playNotificationSound } from "@/utils/sound";
 
 type NotificationItem = {
   id: string;
@@ -17,12 +18,32 @@ type NotificationItem = {
   createdAt: Date | string;
 };
 
+const SOUND_STORAGE_KEY = "kanban_notification_sound";
+
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const saved = localStorage.getItem(SOUND_STORAGE_KEY);
+    return saved !== null ? saved === "true" : true;
+  });
   const menuRef = useRef<HTMLDivElement>(null);
+  const isFirstLoadRef = useRef(true);
+  const lastKnownIdRef = useRef<string | null>(null);
+
+  function toggleSound() {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem(SOUND_STORAGE_KEY, String(next));
+      if (next) {
+        playNotificationSound();
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -32,11 +53,34 @@ export function NotificationBell() {
       try {
         const data = await getNotificationsAction();
         if (!cancelled) {
-          setNotifications(data.notifications as NotificationItem[]);
-          setUnreadCount(data.unreadCount);
+          const newNotifications = data.notifications as NotificationItem[];
+          const newUnreadCount = data.unreadCount;
+          const newestNotif = newNotifications[0];
+
+          // If new notifications arrived after initial load, play sound chime without toaster popup
+          if (
+            !isFirstLoadRef.current &&
+            newestNotif &&
+            newestNotif.id !== lastKnownIdRef.current &&
+            !newestNotif.readAt
+          ) {
+            const savedSound = localStorage.getItem(SOUND_STORAGE_KEY);
+            const isAudioOn = savedSound === null ? true : savedSound === "true";
+            if (isAudioOn) {
+              playNotificationSound();
+            }
+          }
+
+          if (newestNotif) {
+            lastKnownIdRef.current = newestNotif.id;
+          }
+
+          setNotifications(newNotifications);
+          setUnreadCount(newUnreadCount);
+          isFirstLoadRef.current = false;
         }
       } catch (err) {
-        console.error("Failed to fetch notifications:", err);
+        console.debug("Notifications polling offline/reconnecting:", err);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -50,7 +94,7 @@ export function NotificationBell() {
           if (document.visibilityState === "visible") {
             load();
           }
-        }, 15000);
+        }, 5000); // Check every 5 seconds for fast live updates
       }
     }
 
@@ -84,7 +128,6 @@ export function NotificationBell() {
     };
   }, []);
 
-
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -108,7 +151,7 @@ export function NotificationBell() {
   }
 
   async function handleMarkAllRead() {
-    setNotifications([]);
+    setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date() })));
     setUnreadCount(0);
     try {
       await markAllReadAction();
@@ -134,6 +177,21 @@ export function NotificationBell() {
     }
   }
 
+  function getNotificationIcon(type: string) {
+    switch (type) {
+      case "TASK_DUE_SOON":
+        return <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />;
+      case "TASK_ASSIGNED":
+        return <UserCheck className="h-3.5 w-3.5 text-sky-500 shrink-0" />;
+      case "TASK_STATUS_CHANGED":
+        return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />;
+      case "TASK_COMMENTED":
+        return <MessageSquare className="h-3.5 w-3.5 text-indigo-500 shrink-0" />;
+      default:
+        return <Bell className="h-3.5 w-3.5 text-slate-500 shrink-0" />;
+    }
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -142,33 +200,36 @@ export function NotificationBell() {
         aria-label="Notifications"
         className="relative rounded-xl border border-slate-200 bg-white p-2 text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:border-slate-700 dark:hover:text-white cursor-pointer"
       >
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
+        <Bell className="h-4 w-4" />
 
         {unreadCount > 0 ? (
-          <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm">
+          <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         ) : null}
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 mt-2 w-80 z-50 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+        <div className="absolute right-0 mt-2 w-84 z-50 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>🔔</span> Notifications
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Bell className="h-3.5 w-3.5 text-slate-700 dark:text-slate-200" />
+                <span>Notifications</span>
+              </h3>
+              <button
+                type="button"
+                onClick={toggleSound}
+                title={soundEnabled ? "Mute notification sound" : "Enable notification sound"}
+                className="flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition cursor-pointer p-0.5 rounded"
+              >
+                {soundEnabled ? (
+                  <Volume2 className="h-3.5 w-3.5 text-sky-500" />
+                ) : (
+                  <VolumeX className="h-3.5 w-3.5 text-slate-400" />
+                )}
+              </button>
+            </div>
             {notifications.length > 0 ? (
               <button
                 type="button"
@@ -180,7 +241,7 @@ export function NotificationBell() {
             ) : null}
           </div>
 
-          <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
+          <div className="mt-2 max-h-80 space-y-1.5 overflow-y-auto">
             {loading ? (
               <p className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">Loading...</p>
             ) : notifications.length === 0 ? (
@@ -188,6 +249,7 @@ export function NotificationBell() {
             ) : (
               notifications.map((n) => {
                 const isUnread = !n.readAt;
+                const isDueSoon = n.type === "TASK_DUE_SOON";
                 const timeStr = new Date(n.createdAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -197,13 +259,17 @@ export function NotificationBell() {
                   <div
                     key={n.id}
                     onClick={() => isUnread && handleMarkRead(n.id)}
-                    className={`group relative flex items-start justify-between rounded-xl p-2.5 transition-colors cursor-pointer ${
+                    className={`group relative flex items-start gap-2.5 rounded-xl p-2.5 transition-colors cursor-pointer ${
                       isUnread
-                        ? "bg-indigo-50/70 border border-indigo-200/80 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:border-indigo-800/60 dark:hover:bg-indigo-950/60"
+                        ? isDueSoon
+                          ? "bg-amber-50/80 border border-amber-200/90 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:border-amber-800/60 dark:hover:bg-amber-950/60"
+                          : "bg-indigo-50/70 border border-indigo-200/80 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:border-indigo-800/60 dark:hover:bg-indigo-950/60"
                         : "border border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/70"
                     }`}
                   >
-                    <div className="min-w-0 flex-1 pr-6">
+                    <div className="mt-0.5">{getNotificationIcon(n.type)}</div>
+
+                    <div className="min-w-0 flex-1 pr-2">
                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-snug">
                         {String(n.payload?.message || n.payload?.taskTitle || "Notification")}
                       </p>
@@ -212,7 +278,11 @@ export function NotificationBell() {
 
                     <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                       {isUnread ? (
-                        <span className="h-2 w-2 rounded-full bg-indigo-500 shrink-0" />
+                        <span
+                          className={`h-2 w-2 rounded-full shrink-0 ${
+                            isDueSoon ? "bg-amber-500" : "bg-indigo-500"
+                          }`}
+                        />
                       ) : null}
                       <button
                         type="button"

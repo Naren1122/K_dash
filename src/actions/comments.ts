@@ -26,9 +26,9 @@ export async function createComment(input: CreateCommentInput) {
   const { taskId, content } = parseOrThrow(createCommentSchema, input);
   const task = await getTaskOrThrow(taskId);
 
-  if (user.role === Role.MEMBER && task.assigneeId !== user.id && task.assigneeId !== null) {
+  if (user.role === Role.MEMBER && task.assigneeId !== user.id) {
     actionLogger("comment_permission_failed", { taskId, userId: user.id });
-    throw new ActionError(403, "You can only comment on tasks assigned to you or unassigned tasks");
+    throw new ActionError(403, "Members can only comment on tasks assigned to them");
   }
 
   actionLogger("create_comment_start", { taskId, userId: user.id });
