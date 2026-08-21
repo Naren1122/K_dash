@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TaskStatus } from "../src/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -18,7 +18,7 @@ async function main() {
       name: adminName,
       email: adminEmail,
       passwordHash: await bcrypt.hash(adminPassword, 12),
-      role: Role.ADMIN,
+      role: "ADMIN",
     },
   });
 
@@ -33,9 +33,9 @@ async function main() {
       key: "MAIN",
       columns: {
         create: [
-          { name: "To Do", status: TaskStatus.TODO, position: 0 },
-          { name: "In Progress", status: TaskStatus.IN_PROGRESS, position: 1 },
-          { name: "Done", status: TaskStatus.DONE, position: 2 },
+          { name: "To Do", status: "TODO", position: 0 },
+          { name: "In Progress", status: "IN_PROGRESS", position: 1 },
+          { name: "Done", status: "DONE", position: 2 },
         ],
       },
     },

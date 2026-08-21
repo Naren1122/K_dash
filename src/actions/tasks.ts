@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { Role } from "@/generated/prisma/client";
+import { Role } from "@/types/prisma";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";

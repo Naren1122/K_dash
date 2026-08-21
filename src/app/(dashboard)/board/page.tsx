@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "../../../../auth";
 import { Board } from "@/components/board";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma/client";
+
 
 export const metadata = {
   title: "Board | Kanban Task Board",
@@ -15,40 +15,14 @@ export default async function BoardPage() {
     redirect("/login");
   }
 
-  type TaskWithRelations = Prisma.TaskGetPayload<{
-    select: {
-      id: true;
-      title: true;
-      description: true;
-      status: true;
-      priority: true;
-      dueDate: true;
-      createdAt: true;
-      updatedAt: true;
-      assignee: { select: { id: true; name: true; email: true } };
-      labels: { select: { label: { select: { id: true; name: true; color: true } } } };
-      comments: {
-        orderBy: { createdAt: "asc" };
-        take: 100;
-        select: {
-          id: true;
-          content: true;
-          createdAt: true;
-          updatedAt: true;
-          author: { select: { id: true; name: true; email: true } };
-        };
-      };
-    };
-  }>;
-
-  const results = await Promise.all([
+  const [tasks, assignees, labels, boardColumnsRaw] = await Promise.all([
     prisma.task.findMany({
       where:
         session.user.role === "ADMIN"
           ? undefined
           : {
-              OR: [{ assigneeId: session.user.id }, { assigneeId: null }],
-            },
+            OR: [{ assigneeId: session.user.id }, { assigneeId: null }],
+          },
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -92,11 +66,6 @@ export default async function BoardPage() {
       select: { id: true, name: true, position: true, status: true, wipLimit: true, boardId: true },
     }),
   ]);
-
-  const tasks: TaskWithRelations[] = results[0];
-  const assignees = results[1];
-  const labels = results[2];
-  const boardColumnsRaw = results[3];
 
   const boardTasks = tasks.map((task) => ({
     ...task,

@@ -3,7 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { auth } from "../../auth";
-import { Role } from "@/generated/prisma/client";
+import { Role } from "@/types/prisma";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/utils/logger";
 import { taskIdSchema } from "@/lib/schemas/tasksSchema";

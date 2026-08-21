@@ -1,6 +1,7 @@
 "use server";
 
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
@@ -54,8 +55,8 @@ export async function createColumn(input: CreateColumnInput) {
       position: nextPosition,
       boardId: data.boardId,
     },
-  }).catch((e) => {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+  }).catch((e: unknown) => {
+    if (e instanceof PrismaClientKnownRequestError && e.code === "P2002") {
       throw new ActionError(409, `A column with status "${data.status}" already exists on this board`);
     }
     throw e;

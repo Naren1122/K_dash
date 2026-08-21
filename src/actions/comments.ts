@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { Role } from "@/generated/prisma/client";
+import { Role } from "@/types/prisma";
 import { prisma } from "@/lib/prisma";
 import {
   commentIdSchema,

@@ -64,3 +64,5 @@ $RECYCLE.BIN/
 AGENTS.md
 internship_report.pdf
 vercel_issue.md
+vercel error.csv
+*-log-export-*.json

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "../../auth";
-import { Role } from "@/generated/prisma/client";
+import { Role } from "@/types/prisma";
 
 export async function requireAdmin() {
   const session = await auth();
