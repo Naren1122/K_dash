@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-
+import { useEffect, useMemo, useState, useTransition, useOptimistic } from "react";
+import dynamic from "next/dynamic";
 import {
   createTask,
   deleteTask,
@@ -10,15 +10,9 @@ import {
   updateTaskStatus,
 } from "@/actions/tasks";
 import { useToast } from "@/components/providers/toast-provider";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { CreateTaskForm } from "@/components/board/create-task-form";
-import { TaskDetail } from "@/components/board/task-detail";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { BoardHeader } from "@/components/layout/board-header";
 import { KanbanView } from "@/components/views/kanban-view";
-import { ListView } from "@/components/views/list-view";
-import { CalendarView } from "@/components/views/calendar-view";
-import { TimelineView } from "@/components/views/timeline-view";
 import type { Assignee, BoardTask, Label } from "@/types/types";
 import type { BoardColumn } from "@/types/column-types";
 import type { CreateTaskInput, TaskStatusValue } from "@/lib/schemas/tasksSchema";
@@ -29,8 +23,58 @@ import {
   type SortOption,
 } from "@/utils/taskFilterSort";
 
-const VIEW_STORAGE_KEY = "kanban_active_view";
+// Dynamic imports for secondary views and dialogs to reduce initial client bundle
+const ListView = dynamic(
+  () => import("@/components/views/list-view").then((mod) => mod.ListView),
+  {
+    loading: () => <ViewLoadingSkeleton />,
+    ssr: false,
+  }
+);
 
+const CalendarView = dynamic(
+  () => import("@/components/views/calendar-view").then((mod) => mod.CalendarView),
+  {
+    loading: () => <ViewLoadingSkeleton />,
+    ssr: false,
+  }
+);
+
+const TimelineView = dynamic(
+  () => import("@/components/views/timeline-view").then((mod) => mod.TimelineView),
+  {
+    loading: () => <ViewLoadingSkeleton />,
+    ssr: false,
+  }
+);
+
+const TaskDetail = dynamic(
+  () => import("@/components/board/task-detail").then((mod) => mod.TaskDetail),
+  { ssr: false }
+);
+
+const CreateTaskForm = dynamic(
+  () => import("@/components/board/create-task-form").then((mod) => mod.CreateTaskForm),
+  { ssr: false }
+);
+
+const ConfirmDialog = dynamic(
+  () => import("@/components/shared/confirm-dialog").then((mod) => mod.ConfirmDialog),
+  { ssr: false }
+);
+
+function ViewLoadingSkeleton() {
+  return (
+    <div className="flex h-96 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white/60 p-8 dark:border-slate-800 dark:bg-slate-900/60 backdrop-blur-sm">
+      <div className="flex items-center gap-3 text-sm font-medium text-slate-500 dark:text-slate-400">
+        <Loader2 className="h-5 w-5 animate-spin text-sky-500" />
+        <span>Loading view...</span>
+      </div>
+    </div>
+  );
+}
+
+const VIEW_STORAGE_KEY = "kanban_active_view";
 type ActiveView = "kanban" | "list" | "calendar" | "timeline";
 
 type BoardProps = {
@@ -43,6 +87,11 @@ type BoardProps = {
   userName?: string | null;
   userEmail?: string | null;
 };
+
+type OptimisticAction =
+  | { type: "status"; taskId: string; status: TaskStatusValue }
+  | { type: "assignee"; taskId: string; assigneeId: string }
+  | { type: "delete"; taskId: string };
 
 function actionErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
@@ -66,6 +115,28 @@ export function Board({
   const [activeView, setActiveView] = useState<ActiveView>("kanban");
   const { showToast } = useToast();
 
+  // Optimistic UI updates for instant 60fps drag-and-drop & status changes
+  const [optimisticTasks, setOptimisticTasks] = useOptimistic(
+    tasks,
+    (currentTasks: BoardTask[], action: OptimisticAction) => {
+      if (action.type === "status") {
+        return currentTasks.map((t) =>
+          t.id === action.taskId ? { ...t, status: action.status } : t
+        );
+      }
+      if (action.type === "assignee") {
+        const newAssignee = assignee.find((a) => a.id === action.assigneeId) ?? null;
+        return currentTasks.map((t) =>
+          t.id === action.taskId ? { ...t, assignee: newAssignee } : t
+        );
+      }
+      if (action.type === "delete") {
+        return currentTasks.filter((t) => t.id !== action.taskId);
+      }
+      return currentTasks;
+    }
+  );
+
   useEffect(() => {
     const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as ActiveView | null;
     if (savedView && ["kanban", "list", "calendar", "timeline"].includes(savedView)) {
@@ -88,16 +159,16 @@ export function Board({
   const [pageSize] = useState(3);
 
   const isAdmin = role === "ADMIN";
-  const myTasks = tasks.filter((task) => task.assignee?.id === userId).length;
+  const myTasks = optimisticTasks.filter((task) => task.assignee?.id === userId).length;
   const viewingTask = viewingTaskId
-    ? tasks.find((task) => task.id === viewingTaskId) ?? null
+    ? optimisticTasks.find((task) => task.id === viewingTaskId) ?? null
     : null;
 
   // Processed tasks (filtered + sorted) — shared across all views
   const processedTasks = useMemo(() => {
-    const filtered = filterTasks(tasks, { selectedLabelIds, dueDateFilter });
+    const filtered = filterTasks(optimisticTasks, { selectedLabelIds, dueDateFilter });
     return sortTasks(filtered, sortBy);
-  }, [tasks, selectedLabelIds, dueDateFilter, sortBy]);
+  }, [optimisticTasks, selectedLabelIds, dueDateFilter, sortBy]);
 
   // Reset to Page 1 when filters/sorting change
   useEffect(() => {
@@ -149,7 +220,7 @@ export function Board({
 
   function toggleLabelFilter(labelId: string) {
     setSelectedLabelIds((prev) =>
-      prev.includes(labelId) ? prev.filter((id) => id !== labelId) : [...prev, labelId],
+      prev.includes(labelId) ? prev.filter((id) => id !== labelId) : [...prev, labelId]
     );
   }
 
@@ -172,44 +243,75 @@ export function Board({
       () => {
         setShowCreateForm(false);
         showToast("Task created successfully!", "success");
-      },
+      }
     );
   }
 
   function onUpdateTask(taskId: string, data: CreateTaskInput) {
     runAction(
       () => updateTask({ taskId, ...data }),
-      () => showToast("Task updated successfully!", "success"),
+      () => showToast("Task updated successfully!", "success")
     );
   }
 
   function onStatusChange(taskId: string, status: TaskStatusValue) {
-    runAction(() => updateTaskStatus({ taskId, status }));
+    setError(null);
+    startTransition(async () => {
+      setOptimisticTasks({ type: "status", taskId, status });
+      try {
+        await updateTaskStatus({ taskId, status });
+      } catch (caughtError) {
+        setError(actionErrorMessage(caughtError));
+        showToast(actionErrorMessage(caughtError), "error");
+      }
+    });
   }
 
   function onAssigneeChange(taskId: string, assigneeId: string) {
-    runAction(() => reassignTask({ taskId, assigneeId }));
+    setError(null);
+    startTransition(async () => {
+      setOptimisticTasks({ type: "assignee", taskId, assigneeId });
+      try {
+        await reassignTask({ taskId, assigneeId });
+      } catch (caughtError) {
+        setError(actionErrorMessage(caughtError));
+        showToast(actionErrorMessage(caughtError), "error");
+      }
+    });
   }
 
   function onDeleteTask(taskId: string) {
     const id = taskId;
     setDeletingTaskId(null);
-    runAction(
-      () => deleteTask(id),
-      () => showToast("Task deleted successfully!", "success"),
-    );
+    startTransition(async () => {
+      setOptimisticTasks({ type: "delete", taskId: id });
+      try {
+        await deleteTask(id);
+        showToast("Task deleted successfully!", "success");
+      } catch (caughtError) {
+        setError(actionErrorMessage(caughtError));
+        showToast(actionErrorMessage(caughtError), "error");
+      }
+    });
   }
 
-  // Called when a task is dropped onto a new column (dnd)
+  // Called when a task is dropped onto a new column (dnd) with instant optimistic update
   function onDrop(taskId: string, newStatus: TaskStatusValue) {
-    runAction(
-      () => updateTaskStatus({ taskId, status: newStatus }),
-      () => showToast("Task moved!", "success"),
-    );
+    setError(null);
+    startTransition(async () => {
+      setOptimisticTasks({ type: "status", taskId, status: newStatus });
+      try {
+        await updateTaskStatus({ taskId, status: newStatus });
+        showToast("Task moved!", "success");
+      } catch (caughtError) {
+        setError(actionErrorMessage(caughtError));
+        showToast(actionErrorMessage(caughtError), "error");
+      }
+    });
   }
 
-  const inProgressCount = tasks.filter((task) => task.status === "IN_PROGRESS").length;
-  const doneCount = tasks.filter((task) => task.status === "DONE").length;
+  const inProgressCount = optimisticTasks.filter((task) => task.status === "IN_PROGRESS").length;
+  const doneCount = optimisticTasks.filter((task) => task.status === "DONE").length;
 
   return (
     <main className="p-6 md:p-8 space-y-6">
@@ -239,7 +341,7 @@ export function Board({
               📊
             </span>
           </div>
-          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{tasks.length}</p>
+          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{optimisticTasks.length}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
           <div className="flex items-center justify-between">
@@ -392,7 +494,7 @@ export function Board({
         <ConfirmDialog
           onCancel={() => setDeletingTaskId(null)}
           onConfirm={() => onDeleteTask(deletingTaskId)}
-          taskTitle={tasks.find((task) => task.id === deletingTaskId)?.title ?? "this task"}
+          taskTitle={optimisticTasks.find((task) => task.id === deletingTaskId)?.title ?? "this task"}
         />
       ) : null}
     </main>

@@ -28,6 +28,14 @@ export async function getAdminUsers() {
   });
 }
 
+export async function getAssignees() {
+  return prisma.user.findMany({
+    where: { role: "MEMBER" },
+    orderBy: [{ name: "asc" }, { email: "asc" }],
+    select: { id: true, name: true, email: true },
+  });
+}
+
 
 export async function createUserInDb(data: {
   name?: string | null;

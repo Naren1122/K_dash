@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
-export async function getAnalyticsData() {
+export const getAnalyticsData = cache(async () => {
   const now = new Date();
 
   const [statusGroups, priorityGroups, overdueCount, totalCount, tasks] = await Promise.all([
@@ -70,5 +71,4 @@ export async function getAnalyticsData() {
       createdAt: t.createdAt.toISOString(),
     })),
   };
-}
-
+});
