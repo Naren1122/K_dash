@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "../../../auth";
+import { auth } from "../../auth";
 import { Role } from "@/generated/prisma/client";
 
 export async function requireAdmin() {

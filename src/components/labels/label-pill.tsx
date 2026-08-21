@@ -1,4 +1,4 @@
-import type { Label } from "@/components/board/types";
+import type { Label } from "@/types/types";
 
 export function LabelPill({ label }: { label: Label }) {
   return (

@@ -3,9 +3,9 @@
 import { PriorityBadge } from "@/components/board/priority-badge";
 import { DueDateBadge } from "@/components/board/due-date-badge";
 import { LabelPill } from "@/components/labels/label-pill";
-import { columns, statusLabels, type Assignee, type BoardTask } from "@/components/board/types";
-import type { TaskStatusValue } from "@/lib/schemas/taskSchema";
-import { getInitials } from "@/lib/utils/initials";
+import { columns, statusLabels, type Assignee, type BoardTask } from "@/types/types";
+import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
+import { getInitials } from "@/utils/initials";
 
 type TaskCardProps = {
   task: BoardTask;

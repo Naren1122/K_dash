@@ -3,8 +3,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TaskCard } from "@/components/board/task-card";
-import type { Assignee, BoardTask } from "@/components/board/types";
-import type { TaskStatusValue } from "@/lib/schemas/taskSchema";
+import type { Assignee, BoardTask } from "@/types/types";
+import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 
 type DraggableTaskCardProps = {
   task: BoardTask;
@@ -26,9 +26,6 @@ export function DraggableTaskCard(props: DraggableTaskCardProps) {
     transform,
     transition,
     isDragging,
-    // Exclude dynamic aria-describedby to keep server/client markup stable
-    // We'll spread the rest of attributes without aria-describedby
-    // Note: TypeScript may warn about unused variable; it's intentional for clarity
   } = useSortable({ id: props.task.id, data: { task: props.task } });
 
   const style = {
@@ -38,8 +35,8 @@ export function DraggableTaskCard(props: DraggableTaskCardProps) {
     cursor: isDragging ? "grabbing" : "grab",
   };
 
-  // Filter out aria-describedby which can change between renders
-  const { "aria-describedby": _ariaDesc, ...cleanAttributes } = attributes as unknown as Record<string, unknown>;
+  const cleanAttributes = { ...(attributes as unknown as Record<string, unknown>) };
+  delete cleanAttributes["aria-describedby"];
 
   return (
     <div ref={setNodeRef} style={style} {...cleanAttributes} {...listeners} className="touch-none">

@@ -1,4 +1,4 @@
-import type { PriorityValue as Priority } from "@/lib/schemas/taskSchema";
+import type { PriorityValue as Priority } from "@/lib/schemas/tasksSchema";
 
 export const PRIORITY_WEIGHTS: Record<Priority, number> = {
   CRITICAL: 4,

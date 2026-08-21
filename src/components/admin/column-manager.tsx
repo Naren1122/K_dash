@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { createColumn, updateColumn, deleteColumn, reorderColumns } from "@/app/actions/columns";
-import { useToast } from "@/components/toast-provider";
+import { createColumn, updateColumn, deleteColumn, reorderColumns } from "@/actions/columns";
+import { useToast } from "@/components/providers/toast-provider";
 import { Pagination } from "@/components/ui/pagination";
-import type { BoardColumn } from "@/components/board/column-types";
+import type { BoardColumn } from "@/types/column-types";
 
 type ColumnManagerProps = {
   columns: BoardColumn[];
@@ -274,7 +274,7 @@ export function ColumnManager({ columns, boardId }: ColumnManagerProps) {
                       value={editWipLimit}
                       onChange={(e) => setEditWipLimit(e.target.value)}
                       placeholder="WIP limit"
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white w-28"
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-900 outline-none focus:border-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white w-28"
                     />
                   </div>
                 ) : (

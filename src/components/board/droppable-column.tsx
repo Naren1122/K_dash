@@ -3,9 +3,9 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DraggableTaskCard } from "@/components/board/draggable-task-card";
-import type { Assignee, BoardTask } from "@/components/board/types";
-import type { BoardColumn } from "@/components/board/column-types";
-import type { TaskStatusValue } from "@/lib/schemas/taskSchema";
+import type { Assignee, BoardTask } from "@/types/types";
+import type { BoardColumn } from "@/types/column-types";
+import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 
 type DroppableColumnProps = {
   column: BoardColumn;

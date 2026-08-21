@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { BoardTask } from "@/components/board/types";
+import type { BoardTask } from "@/types/types";
 import { PriorityBadge } from "@/components/board/priority-badge";
-import { getDueDateStatus } from "@/lib/utils/dueDate";
+import { getDueDateStatus } from "@/utils/dueDate";
 
 type CalendarViewProps = {
   tasks: BoardTask[];

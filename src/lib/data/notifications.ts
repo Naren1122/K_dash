@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/types/prisma";
+import { prisma } from "@/lib/prisma";
 import type { NotificationType, Prisma } from "@/generated/prisma/client";
 
 export type NotificationPayload = {
@@ -57,7 +57,7 @@ export async function notifyTaskStakeholders(
       select: { id: true },
     });
 
-    const adminIds = new Set(admins.map((a) => a.id));
+    const adminIds = new Set(admins.map((a: { id: string }) => a.id));
     const recipientIds = new Set<string>();
 
     if (task?.assigneeId) recipientIds.add(task.assigneeId);
@@ -127,4 +127,3 @@ export async function deleteAllNotifications(userId: string) {
     where: { userId },
   });
 }
-

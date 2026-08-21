@@ -1,19 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import type { BoardTask } from "@/components/board/types";
-import type { TaskStatusValue } from "@/lib/schemas/taskSchema";
+import type { BoardTask, Assignee, Label } from "@/types/types";
+import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 import { PriorityBadge } from "@/components/board/priority-badge";
 import { DueDateBadge } from "@/components/board/due-date-badge";
 import { LabelPill } from "@/components/labels/label-pill";
-import { getInitials } from "@/lib/utils/initials";
-import type { Assignee } from "@/components/board/types";
+import { getInitials } from "@/utils/initials";
 
 type SortField = "title" | "status" | "priority" | "dueDate" | "assignee" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const STATUS_ORDER: Record<TaskStatusValue, number> = { TODO: 0, IN_PROGRESS: 1, DONE: 2 };
-const PRIORITY_ORDER = { CRITICAL: 3, HIGH: 2, MEDIUM: 1, LOW: 0 };
+const PRIORITY_ORDER: Record<string, number> = { CRITICAL: 3, HIGH: 2, MEDIUM: 1, LOW: 0 };
 
 type ListViewProps = {
   tasks: BoardTask[];
@@ -40,7 +39,6 @@ const STATUS_STYLES: Record<TaskStatusValue, string> = {
 
 export function ListView({
   tasks,
-  assignees: _assignees,
   isAdmin,
   currentUserId,
   isPending,
@@ -220,7 +218,7 @@ export function ListView({
                   {/* Labels */}
                   <td className="px-4 py-3.5">
                     <div className="flex flex-wrap gap-1 max-w-[140px]">
-                      {task.labels.map((label) => (
+                      {task.labels.map((label: Label) => (
                         <LabelPill key={label.id} label={label} />
                       ))}
                     </div>

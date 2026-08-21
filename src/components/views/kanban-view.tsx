@@ -17,9 +17,9 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState } from "react";
 import { TaskCard } from "@/components/board/task-card";
 import { DroppableColumn } from "@/components/board/droppable-column";
-import type { BoardColumn } from "@/components/board/column-types";
-import type { Assignee, BoardTask } from "@/components/board/types";
-import type { TaskStatusValue } from "@/lib/schemas/taskSchema";
+import type { BoardColumn } from "@/types/column-types";
+import type { Assignee, BoardTask } from "@/types/types";
+import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 
 type KanbanViewProps = {
   columns: BoardColumn[];

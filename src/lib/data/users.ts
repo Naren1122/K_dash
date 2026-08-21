@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/types/prisma";
-import type { Role } from "@/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
+import type { Role, Prisma } from "@/generated/prisma/client";
 
 export async function findUserByEmail(email: string) {
   return prisma.user.findUnique({
@@ -45,7 +45,7 @@ export async function createUserInDb(data: {
 }
 
 export async function deleteUserInDb(userId: string, fallbackCreatorId: string) {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Reassign tasks created by this user to the admin performing deletion
     await tx.task.updateMany({
       where: { createdById: userId },

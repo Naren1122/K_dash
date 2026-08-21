@@ -9,10 +9,10 @@ import {
   createUserSchema,
   CreateUserFormValues,
   CreateUserInput,
-} from "@/lib/schemas/userSchema";
-import { createUser } from "@/app/actions/users";
+} from "@/lib/schemas/usersSchema";
+import { createUser } from "@/actions/users";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/toast-provider";
+import { useToast } from "@/components/providers/toast-provider";
 
 type CreateUserDialogProps = {
   isOpen: boolean;

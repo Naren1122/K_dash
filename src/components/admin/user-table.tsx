@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import { Trash2, UserPlus } from "lucide-react";
 import { CreateUserDialog } from "./create-user-dialog";
-import { deleteUser } from "@/app/actions/users";
-import { useToast } from "@/components/toast-provider";
+import { deleteUser } from "@/actions/users";
+import { useToast } from "@/components/providers/toast-provider";
 import { Pagination } from "@/components/ui/pagination";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 type Role = "ADMIN" | "MEMBER";
 

@@ -1,15 +1,15 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { createTaskSchema, CreateTaskFormValues, CreateTaskInput } from "@/lib/schemas/taskSchema";
+import { createTaskSchema, CreateTaskFormValues, CreateTaskInput } from "@/lib/schemas/tasksSchema";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { LabelPicker } from "@/components/labels/label-picker";
 import { PRIORITY_OPTIONS } from "@/components/board/priority-badge";
-import type { Assignee, Label } from "@/components/board/types";
+import type { Assignee, Label } from "@/types/types";
 
 type CreateTaskFormProps = {
   assignee: Assignee[];
@@ -33,7 +33,7 @@ export function CreateTaskForm({
     handleSubmit,
     reset,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<CreateTaskFormValues, unknown, CreateTaskInput>({
     resolver: zodResolver(createTaskSchema),
@@ -47,7 +47,7 @@ export function CreateTaskForm({
     },
   });
 
-  const labelIds = watch("labelIds") ?? [];
+  const labelIds = useWatch({ control, name: "labelIds" }) ?? [];
 
   function toggleLabel(labelId: string) {
     const next = labelIds.includes(labelId)

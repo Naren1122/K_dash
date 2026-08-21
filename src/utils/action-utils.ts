@@ -2,11 +2,11 @@ import "server-only";
 
 import { z } from "zod";
 
-import { auth } from "../../../auth";
+import { auth } from "../../auth";
 import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/utils/logger";
-import { taskIdSchema } from "@/lib/schemas/taskSchema";
+import { logger } from "@/utils/logger";
+import { taskIdSchema } from "@/lib/schemas/tasksSchema";
 
 export class ActionError extends Error {
   constructor(

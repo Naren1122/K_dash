@@ -2,21 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 
-import { prisma } from "@/lib/types/prisma";
+import { prisma } from "@/lib/prisma";
 import {
   createBoardSchema,
   CreateBoardInput,
   updateBoardSchema,
   UpdateBoardInput,
   boardIdSchema,
-} from "@/lib/schemas/boardSchema";
-import { logger } from "@/lib/utils/logger";
+} from "@/lib/schemas/boardsSchema";
+import { logger } from "@/utils/logger";
 import {
   ActionError,
   getCurrentUser,
   parseOrThrow,
   requireAdmin,
-} from "@/lib/utils/action-utils";
+} from "@/utils/action-utils";
 
 const actionLogger = logger.action.bind(logger);
 

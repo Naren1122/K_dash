@@ -7,7 +7,7 @@ import {
   markReadAction,
   markAllReadAction,
   deleteNotificationAction,
-} from "@/app/actions/notifications";
+} from "@/actions/notifications";
 
 type NotificationItem = {
   id: string;

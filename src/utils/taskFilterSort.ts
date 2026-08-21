@@ -1,6 +1,6 @@
-import type { BoardTask } from "@/components/board/types";
-import { comparePriorities } from "@/lib/utils/priority";
-import { getDueDateStatus, DueDateStatus } from "@/lib/utils/dueDate";
+import type { BoardTask } from "@/types/types";
+import { comparePriorities } from "@/utils/priority";
+import { getDueDateStatus } from "@/utils/dueDate";
 
 export type DueDateFilterOption = "all" | "overdue" | "upcoming_48h" | "this_week" | "this_month" | "no_date";
 export type SortOption = "priority_desc" | "priority_asc" | "due_date_asc" | "due_date_desc" | "title_asc" | "created_desc";
@@ -20,7 +20,7 @@ export function filterTasks(tasks: BoardTask[], options: Partial<FilterSortOptio
   return tasks.filter((task) => {
     // 1. Label filter (must contain ALL selected labels if any are selected)
     if (selectedLabelIds.length > 0) {
-      const taskLabelIds = new Set(task.labels.map((l) => l.id));
+      const taskLabelIds = new Set(task.labels.map((l: { id: string }) => l.id));
       const matchesLabels = selectedLabelIds.every((id) => taskLabelIds.has(id));
       if (!matchesLabels) return false;
     }

@@ -2,16 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
-import { prisma } from "@/lib/types/prisma";
+import { prisma } from "@/lib/prisma";
 import {
   createLabelSchema,
   CreateLabelInput,
   labelIdSchema,
   updateLabelSchema,
   UpdateLabelInput,
-} from "@/lib/schemas/labelSchema";
-import { logger } from "@/lib/utils/logger";
-import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/lib/utils/action-utils";
+} from "@/lib/schemas/labelsSchema";
+import { logger } from "@/utils/logger";
+import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/utils/action-utils";
 
 import { notifyAllAdmins } from "@/lib/data/notifications";
 

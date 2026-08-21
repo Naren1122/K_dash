@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/utils/action-utils";
+import { getCurrentUser } from "@/utils/action-utils";
 import {
   getUserNotifications,
   markNotificationAsRead,

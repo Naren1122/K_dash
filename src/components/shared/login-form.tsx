@@ -6,9 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useToast } from "@/components/toast-provider";
+import { useToast } from "@/components/providers/toast-provider";
 import { loginSchema, LoginInput } from "@/lib/schemas/loginSchema";
-import { logger } from "@/lib/utils/logger";
+import { logger } from "@/utils/logger";
 
 const loginLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 
@@ -51,7 +51,7 @@ export function LoginForm() {
 
     loginLogger("login_success", { email: data.email });
     showToast("Welcome back! Signing you in... 🚀", "success");
-    setTimeout(() => { router.replace("/"); router.refresh(); }, 600);
+    setTimeout(() => { router.replace("/board"); router.refresh(); }, 600);
   }
 
   return (
@@ -76,7 +76,6 @@ export function LoginForm() {
               {error ? <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</p> : null}
               <button className="w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60" disabled={isSubmitting} type="submit">{isSubmitting ? "Signing in..." : "Sign in to board"}</button>
             </form>
-            {/* <div className="mt-8 rounded-2xl border border-sky-100 bg-sky-50/70 p-4 text-xs leading-5 text-slate-600"><p className="font-bold text-slate-800">Demo accounts</p><div className="mt-2 grid gap-1"><p><span className="font-semibold">Admin:</span> admin@kanban.local / Admin123!</p><p><span className="font-semibold">Maya:</span> maya@kanban.local / Member123!</p><p><span className="font-semibold">Liam:</span> liam@kanban.local / Member123!</p></div></div> */}
           </div>
         </section>
       </div>

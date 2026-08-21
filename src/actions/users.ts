@@ -3,13 +3,13 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
-import { createUserSchema, CreateUserInput } from "@/lib/schemas/userSchema";
-import { logger } from "@/lib/utils/logger";
+import { createUserSchema, CreateUserInput } from "@/lib/schemas/usersSchema";
+import { logger } from "@/utils/logger";
 import {
   ActionError,
   parseOrThrow,
   requireAdmin,
-} from "@/lib/utils/action-utils";
+} from "@/utils/action-utils";
 import {
   createUserInDb,
   findUserByEmail,

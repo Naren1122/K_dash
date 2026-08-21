@@ -8,26 +8,26 @@ import {
   reassignTask,
   updateTask,
   updateTaskStatus,
-} from "@/app/actions/tasks";
-import { useToast } from "@/components/toast-provider";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+} from "@/actions/tasks";
+import { useToast } from "@/components/providers/toast-provider";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CreateTaskForm } from "@/components/board/create-task-form";
 import { TaskDetail } from "@/components/board/task-detail";
-import { BoardHeader } from "@/components/board/board-header";
+import { BoardHeader } from "@/components/layout/board-header";
 import { KanbanView } from "@/components/views/kanban-view";
 import { ListView } from "@/components/views/list-view";
 import { CalendarView } from "@/components/views/calendar-view";
 import { TimelineView } from "@/components/views/timeline-view";
-import type { Assignee, BoardTask, Label } from "@/components/board/types";
-import type { BoardColumn } from "@/components/board/column-types";
-import type { CreateTaskInput, TaskStatusValue } from "@/lib/schemas/taskSchema";
+import type { Assignee, BoardTask, Label } from "@/types/types";
+import type { BoardColumn } from "@/types/column-types";
+import type { CreateTaskInput, TaskStatusValue } from "@/lib/schemas/tasksSchema";
 import {
   filterTasks,
   sortTasks,
   type DueDateFilterOption,
   type SortOption,
-} from "@/lib/utils/taskFilterSort";
+} from "@/utils/taskFilterSort";
 
 const VIEW_STORAGE_KEY = "kanban_active_view";
 

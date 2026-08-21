@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { Label } from "@/components/board/types";
-import type { DueDateFilterOption, SortOption } from "@/lib/utils/taskFilterSort";
+import type { Label } from "@/types/types";
+import type { DueDateFilterOption, SortOption } from "@/utils/taskFilterSort";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
 type BoardHeaderProps = {

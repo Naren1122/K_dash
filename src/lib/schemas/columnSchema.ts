@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { taskStatuses } from "./taskSchema";
+import { taskStatuses } from "./tasksSchema";
  
 export const columnStatusSchema = z.enum(taskStatuses, {
   message: "Invalid status value",

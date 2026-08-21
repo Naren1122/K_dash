@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { dueDateInfo } from "@/components/board/types";
+import { dueDateInfo } from "@/types/types";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 

@@ -1,20 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { createLabel, deleteLabel, updateLabel } from "@/app/actions/labels";
+import { createLabel, deleteLabel, updateLabel } from "@/actions/labels";
 import {
   createLabelSchema,
   CreateLabelFormValues,
   CreateLabelInput,
   labelColors,
-} from "@/lib/schemas/labelSchema";
+} from "@/lib/schemas/labelsSchema";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-import type { Label } from "@/components/board/types";
-import { useToast } from "@/components/toast-provider";
+import type { Label } from "@/types/types";
+import { useToast } from "@/components/providers/toast-provider";
 
 type LabelManagerProps = {
   labels: Label[];
@@ -41,14 +41,14 @@ export function LabelManager({ labels }: LabelManagerProps) {
     handleSubmit,
     reset,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<CreateLabelFormValues, unknown, CreateLabelInput>({
     resolver: zodResolver(createLabelSchema),
     defaultValues: { name: "", color: "#3b82f6" },
   });
 
-  const selectedColor = watch("color") ?? "#3b82f6";
+  const selectedColor = useWatch({ control, name: "color" }) ?? "#3b82f6";
 
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     setError(null);
@@ -122,7 +122,7 @@ export function LabelManager({ labels }: LabelManagerProps) {
         <div>
           <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Color</span>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {labelColors.map((color) => (
+            {labelColors.map((color: string) => (
               <button
                 key={color}
                 aria-label={`Choose color ${color}`}
@@ -132,7 +132,7 @@ export function LabelManager({ labels }: LabelManagerProps) {
                     ? "ring-2 ring-slate-900 dark:ring-white ring-offset-2 dark:ring-offset-slate-900"
                     : "hover:scale-110"
                 }`}
-                onClick={() => setValue("color", color, { shouldValidate: true })}
+                onClick={() => setValue("color", color as CreateLabelInput["color"], { shouldValidate: true })}
                 style={{ backgroundColor: color }}
                 type="button"
               />
@@ -210,7 +210,6 @@ export function LabelManager({ labels }: LabelManagerProps) {
         )}
       </ul>
 
-      {/* Pagination */}
       <Pagination
         currentPage={safePage}
         totalPages={totalPages}

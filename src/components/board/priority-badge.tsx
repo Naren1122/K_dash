@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { PriorityValue } from "@/lib/schemas/taskSchema";
+import type { PriorityValue } from "@/lib/schemas/tasksSchema";
 
 const priorityMeta: Record<PriorityValue, { label: string; badge: string; dot: string }> = {
   LOW: { label: "Low", badge: "bg-slate-100 text-slate-600", dot: "bg-slate-400" },

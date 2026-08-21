@@ -2,7 +2,7 @@
 
 import { Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/types/prisma";
+import { prisma } from "@/lib/prisma";
 import {
   columnIdSchema,
   createColumnSchema,
@@ -12,8 +12,8 @@ import {
   updateColumnSchema,
   UpdateColumnInput,
 } from "@/lib/schemas/columnSchema";
-import { logger } from "@/lib/utils/logger";
-import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/lib/utils/action-utils";
+import { logger } from "@/utils/logger";
+import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/utils/action-utils";
 
 import { notifyAllAdmins } from "@/lib/data/notifications";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState, useRef } from "react";
-import { Toast, ToastType } from "./toast";
+import { Toast, ToastType } from "@/components/shared/toast";
 
 type ToastItem = {
   id: number;
@@ -55,4 +55,3 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     </ToastContext.Provider>
   );
 }
-

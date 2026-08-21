@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUser } from "@/lib/utils/action-utils";
+import { getCurrentUser } from "@/utils/action-utils";
 import { getActivityLogsForTask } from "@/lib/data/activity";
 
 export async function getActivityLogsAction(taskId: string) {

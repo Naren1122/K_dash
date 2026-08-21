@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { BoardTask } from "@/components/board/types";
-import { formatLocalDate, getDueDateStatus } from "@/lib/utils/dueDate";
+import type { BoardTask } from "@/types/types";
+import { formatLocalDate, getDueDateStatus } from "@/utils/dueDate";
 
 type ZoomLevel = "day" | "week" | "month";
 

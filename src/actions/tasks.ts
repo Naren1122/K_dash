@@ -1,10 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { Role } from "../../generated/prisma/client";
+import { Role } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 
-import { prisma } from "@/lib/types/prisma";
+import { prisma } from "@/lib/prisma";
 import {
   createTaskSchema,
   CreateTaskInput,
@@ -13,15 +13,15 @@ import {
   updateTaskSchema,
   UpdateTaskStatusInput,
   ReassignTaskInput,
-} from "@/lib/schemas/taskSchema";
-import { logger } from "@/lib/utils/logger";
+} from "@/lib/schemas/tasksSchema";
+import { logger } from "@/utils/logger";
 import {
   ActionError,
   getCurrentUser,
   getTaskOrThrow,
   parseOrThrow,
   requireAdmin,
-} from "@/lib/utils/action-utils";
+} from "@/utils/action-utils";
 
 import { createActivityLog } from "@/lib/data/activity";
 import { notifyTaskStakeholders } from "@/lib/data/notifications";

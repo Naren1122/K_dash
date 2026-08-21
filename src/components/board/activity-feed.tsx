@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getActivityLogsAction } from "@/app/actions/activity";
+import { getActivityLogsAction } from "@/actions/activity";
 
 type ActivityLogItem = {
   id: string;

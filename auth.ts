@@ -5,7 +5,7 @@ import { Role } from "./src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/utils/logger";
+import { logger } from "@/utils/logger";
 
 const authLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 

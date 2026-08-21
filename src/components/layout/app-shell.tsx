@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut, Menu, X } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 type Role = "ADMIN" | "MEMBER";
 
@@ -27,7 +27,7 @@ export function AppShell({ user, children }: AppShellProps) {
   const navItems = [
     {
       name: "Board Workspaces",
-      href: "/",
+      href: "/board",
       icon: (
         <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
@@ -111,7 +111,7 @@ export function AppShell({ user, children }: AppShellProps) {
             Navigation
           </p>
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href === "/board" && pathname === "/");
             const isRestricted = item.href === "/admin" && !isAdmin;
 
             return (

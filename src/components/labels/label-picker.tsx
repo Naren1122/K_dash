@@ -1,6 +1,6 @@
 "use client";
 
-import type { Label } from "@/components/board/types";
+import type { Label } from "@/types/types";
 
 type LabelPickerProps = {
   labels: Label[];

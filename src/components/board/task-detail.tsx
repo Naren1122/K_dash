@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { createTaskSchema, CreateTaskFormValues, CreateTaskInput } from "@/lib/schemas/taskSchema";
+import { createTaskSchema, CreateTaskFormValues, CreateTaskInput } from "@/lib/schemas/tasksSchema";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
@@ -14,7 +14,7 @@ import { LabelPill } from "@/components/labels/label-pill";
 import { LabelPicker } from "@/components/labels/label-picker";
 import { ActivityFeed } from "@/components/board/activity-feed";
 import { TaskComments } from "@/components/comments/task-comments";
-import { toDateInputValue, type Assignee, type BoardTask, type Label } from "@/components/board/types";
+import { toDateInputValue, type Assignee, type BoardTask, type Label } from "@/types/types";
 
 type TaskDetailProps = {
   task: BoardTask;
@@ -54,7 +54,7 @@ export function TaskDetail({
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<CreateTaskFormValues, unknown, CreateTaskInput>({
     resolver: zodResolver(createTaskSchema),
@@ -68,7 +68,7 @@ export function TaskDetail({
     },
   });
 
-  const labelIds = watch("labelIds") ?? [];
+  const labelIds = useWatch({ control, name: "labelIds" }) ?? [];
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setVisible(true));

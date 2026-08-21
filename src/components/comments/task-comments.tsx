@@ -2,12 +2,12 @@
 
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 
-import { createComment, deleteComment, updateComment } from "@/app/actions/comments";
-import { createCommentSchema } from "@/lib/schemas/commentSchema";
-import type { Assignee, Comment } from "@/components/board/types";
-import { useToast } from "@/components/toast-provider";
-import { getInitials } from "@/lib/utils/initials";
-import { MarkdownContent } from "@/lib/utils/markdown";
+import { createComment, deleteComment, updateComment } from "@/actions/comments";
+import { createCommentSchema } from "@/lib/schemas/commentsSchema";
+import type { Assignee, Comment } from "@/types/types";
+import { useToast } from "@/components/providers/toast-provider";
+import { getInitials } from "@/utils/initials";
+import { MarkdownContent } from "@/components/shared/markdown";
 import { MentionAutocomplete } from "@/components/comments/mention-autocomplete";
 
 const EDIT_WINDOW_MS = 5 * 60 * 1000;

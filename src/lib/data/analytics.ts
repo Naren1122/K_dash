@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/types/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function getAnalyticsData() {
   const tasks = await prisma.task.findMany({

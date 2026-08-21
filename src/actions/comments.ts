@@ -3,16 +3,16 @@
 import { revalidatePath } from "next/cache";
 
 import { Role } from "@/generated/prisma/client";
-import { prisma } from "@/lib/types/prisma";
+import { prisma } from "@/lib/prisma";
 import {
   commentIdSchema,
   createCommentSchema,
   CreateCommentInput,
   updateCommentSchema,
   UpdateCommentInput,
-} from "@/lib/schemas/commentSchema";
-import { logger } from "@/lib/utils/logger";
-import { ActionError, getCurrentUser, getTaskOrThrow, parseOrThrow } from "@/lib/utils/action-utils";
+} from "@/lib/schemas/commentsSchema";
+import { logger } from "@/utils/logger";
+import { ActionError, getCurrentUser, getTaskOrThrow, parseOrThrow } from "@/utils/action-utils";
 
 import { createActivityLog } from "@/lib/data/activity";
 import { notifyTaskStakeholders } from "@/lib/data/notifications";
