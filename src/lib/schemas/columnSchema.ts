@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { taskStatuses } from "./tasksSchema";
+import { taskStatusSchema } from "./tasksSchema";
  
-export const columnStatusSchema = z.enum(taskStatuses, {
-  message: "Invalid status value",
-});
+export const columnStatusSchema = taskStatusSchema;
+
 
 export const columnIdSchema = z
   .string()

@@ -26,6 +26,8 @@ export function NotificationBell() {
 
   useEffect(() => {
     let cancelled = false;
+    let interval: NodeJS.Timeout | null = null;
+
     async function load() {
       try {
         const data = await getNotificationsAction();
@@ -42,13 +44,46 @@ export function NotificationBell() {
       }
     }
 
+    function startPolling() {
+      if (!interval) {
+        interval = setInterval(() => {
+          if (document.visibilityState === "visible") {
+            load();
+          }
+        }, 15000);
+      }
+    }
+
+    function stopPolling() {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        load();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    }
+
     load();
-    const interval = setInterval(load, 15000);
+    startPolling();
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", load);
+
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", load);
     };
   }, []);
+
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

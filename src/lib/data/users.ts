@@ -21,6 +21,14 @@ export async function countAdminUsers() {
   });
 }
 
+export async function getAdminUsers() {
+  return prisma.user.findMany({
+    where: { role: "ADMIN" },
+    select: { id: true, name: true, email: true },
+  });
+}
+
+
 export async function createUserInDb(data: {
   name?: string | null;
   email: string;

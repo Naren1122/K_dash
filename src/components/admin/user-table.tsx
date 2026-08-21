@@ -7,8 +7,7 @@ import { deleteUser } from "@/actions/users";
 import { useToast } from "@/components/providers/toast-provider";
 import { Pagination } from "@/components/ui/pagination";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-
-type Role = "ADMIN" | "MEMBER";
+import type { Role } from "@prisma/client";
 
 interface UserItem {
   id: string;

@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { taskStatusSchema } from "./tasksSchema";
 
-const taskStatuses = ["TODO", "IN_PROGRESS", "DONE"] as const;
 
 export const createBoardSchema = z.object({
   name: z.string().trim().min(1, "Board name is required").max(100),
@@ -35,7 +35,8 @@ export const boardIdSchema = z.string().min(1, "Board ID is required");
 export const createColumnSchema = z.object({
   boardId: z.string().min(1, "Board ID is required"),
   name: z.string().trim().min(1, "Column name is required").max(50),
-  status: z.enum(taskStatuses, { message: "Invalid task status" }),
+  status: taskStatusSchema,
+
   position: z.number().int().nonnegative().optional(),
 });
 

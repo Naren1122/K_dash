@@ -45,23 +45,20 @@ export const statusLabels: Record<TaskStatusValue, string> = {
   DONE: "Done",
 };
 
-const UPCOMING_WINDOW_MS = 48 * 60 * 60 * 1000;
+import { getDueDateStatus } from "@/utils/dueDate";
 
 export function dueDateInfo(dueDate: string | null) {
-  if (!dueDate) return null;
-
-  const due = new Date(dueDate);
-  const now = Date.now();
-  const diff = due.getTime() - now;
-
-  if (diff < 0) {
+  const status = getDueDateStatus(dueDate);
+  if (status === "none") return null;
+  if (status === "overdue") {
     return { tone: "overdue", label: "Overdue" } as const;
   }
-  if (diff <= UPCOMING_WINDOW_MS) {
+  if (status === "upcoming_48h") {
     return { tone: "upcoming", label: "Due soon" } as const;
   }
   return { tone: "ok", label: "Due" } as const;
 }
+
 
 export function toDateInputValue(iso: string | null): string {
   if (!iso) return "";

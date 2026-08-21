@@ -1,9 +1,11 @@
 import { z } from "zod";
+import { Role } from "@prisma/client";
 
-export const roles = ["ADMIN", "MEMBER"] as const;
-export type RoleValue = (typeof roles)[number];
+export const roles = Object.values(Role) as [Role, ...Role[]];
+export type RoleValue = Role;
 
-export const roleSchema = z.enum(roles);
+export const roleSchema = z.nativeEnum(Role);
+
 
 export const createUserSchema = z.object({
   name: z

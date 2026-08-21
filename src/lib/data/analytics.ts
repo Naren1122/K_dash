@@ -1,50 +1,62 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getAnalyticsData() {
-  const tasks = await prisma.task.findMany({
-    include: {
-      assignee: {
-        select: { id: true, name: true, email: true },
+  const now = new Date();
+
+  const [statusGroups, priorityGroups, overdueCount, totalCount, tasks] = await Promise.all([
+    prisma.task.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+    }),
+    prisma.task.groupBy({
+      by: ["priority"],
+      _count: { _all: true },
+    }),
+    prisma.task.count({
+      where: {
+        dueDate: { lt: now },
+        status: { not: "DONE" },
       },
-      createdBy: {
-        select: { id: true, name: true, email: true },
-      },
-      labels: {
-        include: {
-          label: true,
+    }),
+    prisma.task.count(),
+    prisma.task.findMany({
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        priority: true,
+        dueDate: true,
+        createdAt: true,
+        assignee: {
+          select: { name: true, email: true },
+        },
+        createdBy: {
+          select: { name: true, email: true },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
-  const total = tasks.length;
-  const todo = tasks.filter((t) => t.status === "TODO").length;
-  const inProgress = tasks.filter((t) => t.status === "IN_PROGRESS").length;
-  const done = tasks.filter((t) => t.status === "DONE").length;
-
-  const lowPriority = tasks.filter((t) => t.priority === "LOW").length;
-  const mediumPriority = tasks.filter((t) => t.priority === "MEDIUM").length;
-  const highPriority = tasks.filter((t) => t.priority === "HIGH").length;
-  const criticalPriority = tasks.filter((t) => t.priority === "CRITICAL").length;
-
-  const now = new Date();
-  const overdue = tasks.filter(
-    (t) => t.dueDate && new Date(t.dueDate) < now && t.status !== "DONE"
-  ).length;
+  const statusMap = Object.fromEntries(
+    statusGroups.map((g) => [g.status, g._count._all])
+  );
+  const priorityMap = Object.fromEntries(
+    priorityGroups.map((g) => [g.priority, g._count._all])
+  );
 
   return {
     metrics: {
-      total,
-      todo,
-      inProgress,
-      done,
-      overdue,
+      total: totalCount,
+      todo: statusMap.TODO || 0,
+      inProgress: statusMap.IN_PROGRESS || 0,
+      done: statusMap.DONE || 0,
+      overdue: overdueCount,
       priority: {
-        low: lowPriority,
-        medium: mediumPriority,
-        high: highPriority,
-        critical: criticalPriority,
+        low: priorityMap.LOW || 0,
+        medium: priorityMap.MEDIUM || 0,
+        high: priorityMap.HIGH || 0,
+        critical: priorityMap.CRITICAL || 0,
       },
     },
     tasks: tasks.map((t) => ({
@@ -59,3 +71,4 @@ export async function getAnalyticsData() {
     })),
   };
 }
+

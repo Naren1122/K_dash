@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotificationType } from "@prisma/client";
+import { getAdminUsers } from "@/lib/data/users";
 
 export type { NotificationType };
 
@@ -49,17 +50,15 @@ export async function notifyTaskStakeholders(
   additionalRecipientIds: (string | null | undefined)[] = []
 ) {
   try {
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { assigneeId: true, createdById: true },
-    });
+    const [task, admins] = await Promise.all([
+      prisma.task.findUnique({
+        where: { id: taskId },
+        select: { assigneeId: true, createdById: true },
+      }),
+      getAdminUsers(),
+    ]);
 
-    const admins = await prisma.user.findMany({
-      where: { role: "ADMIN" },
-      select: { id: true },
-    });
-
-    const adminIds = new Set(admins.map((a: { id: string }) => a.id));
+    const adminIds = new Set(admins.map((a) => a.id));
     const recipientIds = new Set<string>();
 
     if (task?.assigneeId) recipientIds.add(task.assigneeId);
@@ -71,6 +70,12 @@ export async function notifyTaskStakeholders(
       if (id) recipientIds.add(id);
     }
 
+    const notificationsToCreate: {
+      userId: string;
+      type: NotificationType;
+      payload: object;
+    }[] = [];
+
     for (const recipientId of recipientIds) {
       if (!recipientId) continue;
       const isAdmin = adminIds.has(recipientId);
@@ -79,8 +84,18 @@ export async function notifyTaskStakeholders(
       // Admins receive notifications for ALL events (made by members or by admin themself)
       // Non-admin members receive notifications for other users' actions on their tasks
       if (isAdmin || !isSelf) {
-        await createNotification(recipientId, type, payload, isAdmin);
+        notificationsToCreate.push({
+          userId: recipientId,
+          type,
+          payload: payload as object,
+        });
       }
+    }
+
+    if (notificationsToCreate.length > 0) {
+      await prisma.notification.createMany({
+        data: notificationsToCreate,
+      });
     }
   } catch (error) {
     console.error("Failed to notify task stakeholders:", error);
@@ -92,13 +107,16 @@ export async function notifyAllAdmins(
   payload: NotificationPayload
 ) {
   try {
-    const admins = await prisma.user.findMany({
-      where: { role: "ADMIN" },
-      select: { id: true },
-    });
+    const admins = await getAdminUsers();
 
-    for (const admin of admins) {
-      await createNotification(admin.id, type, payload, true);
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map((admin) => ({
+          userId: admin.id,
+          type,
+          payload: payload as object,
+        })),
+      });
     }
   } catch (error) {
     console.error("Failed to notify admins:", error);
@@ -113,8 +131,9 @@ export async function markNotificationAsRead(id: string, userId: string) {
 }
 
 export async function markAllNotificationsAsRead(userId: string) {
-  return prisma.notification.deleteMany({
-    where: { userId },
+  return prisma.notification.updateMany({
+    where: { userId, readAt: null },
+    data: { readAt: new Date() },
   });
 }
 
@@ -129,3 +148,4 @@ export async function deleteAllNotifications(userId: string) {
     where: { userId },
   });
 }
+

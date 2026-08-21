@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/utils/action-utils";
 import {
   getUserNotifications,
@@ -21,27 +20,24 @@ export async function getNotificationsAction() {
 export async function markReadAction(notificationId: string) {
   const user = await getCurrentUser();
   await markNotificationAsRead(notificationId, user.id);
-  revalidatePath("/");
   return { success: true };
 }
 
 export async function markAllReadAction() {
   const user = await getCurrentUser();
   await markAllNotificationsAsRead(user.id);
-  revalidatePath("/");
   return { success: true };
 }
 
 export async function deleteNotificationAction(notificationId: string) {
   const user = await getCurrentUser();
   await deleteNotification(notificationId, user.id);
-  revalidatePath("/");
   return { success: true };
 }
 
 export async function deleteAllNotificationsAction() {
   const user = await getCurrentUser();
   await deleteAllNotifications(user.id);
-  revalidatePath("/");
   return { success: true };
 }
+

@@ -6,8 +6,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-
-type Role = "ADMIN" | "MEMBER";
+import type { Role } from "@prisma/client";
 
 interface AppShellProps {
   user: {

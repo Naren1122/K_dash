@@ -35,10 +35,13 @@ function optionalNullableDateField() {
     });
 }
 
-export const priorities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
-export type PriorityValue = (typeof priorities)[number];
+import { Priority, TaskStatus } from "@prisma/client";
 
-export const prioritySchema = z.enum(priorities, { message: "Invalid priority" });
+export const priorities = Object.values(Priority) as [Priority, ...Priority[]];
+export type PriorityValue = Priority;
+
+export const prioritySchema = z.nativeEnum(Priority, { message: "Invalid priority" });
+
 
 export const createTaskSchema = z.object({
   title: z
@@ -66,12 +69,13 @@ export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 
 export const taskIdSchema = z.string().trim().min(1, "Task id is required");
 
-export const taskStatuses = ["TODO", "IN_PROGRESS", "DONE"] as const;
-export type TaskStatusValue = (typeof taskStatuses)[number];
+export const taskStatuses = Object.values(TaskStatus) as [TaskStatus, ...TaskStatus[]];
+export type TaskStatusValue = TaskStatus;
 
-export const taskStatusSchema = z.enum(taskStatuses, {
+export const taskStatusSchema = z.nativeEnum(TaskStatus, {
   message: "Invalid task status",
 });
+
 
 export type UpdateTaskStatusInput = {
   taskId: unknown;
