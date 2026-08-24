@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/providers/toast-provider";
 import { loginSchema, LoginInput } from "@/lib/schemas/loginSchema";
 import { logger } from "@/utils/logger";
@@ -13,7 +13,6 @@ import { logger } from "@/utils/logger";
 const loginLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
