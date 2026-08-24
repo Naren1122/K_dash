@@ -7,13 +7,33 @@ import { Role } from "@/types/prisma";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/utils/logger";
 import { taskIdSchema } from "@/lib/schemas/tasksSchema";
+import {
+  AppError,
+  ErrorCode,
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+  formatZodErrorMessage,
+} from "@/lib/errors";
 
-export class ActionError extends Error {
-  constructor(
-    public readonly status: 400 | 401 | 403 | 404 | 409,
-    message: string,
-  ) {
-    super(message);
+export class ActionError extends AppError {
+  public readonly status: 400 | 401 | 403 | 404 | 409;
+
+  constructor(status: 400 | 401 | 403 | 404 | 409, message: string) {
+    const code =
+      status === 400
+        ? ErrorCode.BAD_REQUEST
+        : status === 401
+        ? ErrorCode.UNAUTHORIZED
+        : status === 403
+        ? ErrorCode.FORBIDDEN
+        : status === 404
+        ? ErrorCode.NOT_FOUND
+        : ErrorCode.CONFLICT;
+
+    super(message, { statusCode: status, code });
+    this.status = status;
     this.name = "ActionError";
   }
 }
@@ -23,8 +43,8 @@ export function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown): T {
 
   if (!result.success) {
     logger.action("validation_failed", { errors: result.error.issues });
-    const messages = result.error.issues.map(issue => issue.message).join('; ');
-    throw new ActionError(400, messages || "Invalid input");
+    const message = formatZodErrorMessage(result.error);
+    throw new ValidationError(message);
   }
 
   return result.data;
@@ -35,12 +55,12 @@ export async function getCurrentUser() {
 
   if (!session?.user?.id) {
     logger.action("auth_failed", { reason: "no_session" });
-    throw new ActionError(401, "Unauthorized");
+    throw new UnauthorizedError();
   }
 
   if (session.user.role !== Role.ADMIN && session.user.role !== Role.MEMBER) {
     logger.action("auth_failed", { reason: "invalid_role", role: session.user.role });
-    throw new ActionError(403, "Forbidden");
+    throw new ForbiddenError();
   }
 
   logger.action("auth_success", { userId: session.user.id, role: session.user.role });
@@ -52,7 +72,7 @@ export async function requireAdmin() {
 
   if (user.role !== Role.ADMIN) {
     logger.action("admin_required", { userId: user.id, role: user.role });
-    throw new ActionError(403, "Only administrators can perform this action");
+    throw new ForbiddenError("Only administrators can perform this action");
   }
 
   return user;
@@ -67,7 +87,7 @@ export async function getTaskOrThrow(taskId: unknown) {
 
   if (!task) {
     logger.action("task_not_found", { taskId: id });
-    throw new ActionError(404, "Task not found");
+    throw new NotFoundError("Task", id);
   }
 
   return task;

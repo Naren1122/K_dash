@@ -1,4 +1,4 @@
-import { getAnalyticsData } from "@/lib/data/analytics";
+import { getAnalyticsData } from "@/actions/analytics";
 import { AnalyticsDashboard } from "@/components/admin/analytics-dashboard";
 
 export const metadata = {

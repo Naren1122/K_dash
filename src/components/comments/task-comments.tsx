@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useState } from "react";
 
 import { createComment, deleteComment, updateComment } from "@/actions/comments";
 import { createCommentSchema } from "@/lib/schemas/commentsSchema";
 import type { Assignee, Comment } from "@/types/types";
-import { useToast } from "@/components/providers/toast-provider";
+import { useActionRunner } from "@/hooks/useActionRunner";
 import { getInitials } from "@/utils/initials";
 import { MarkdownContent } from "@/components/shared/markdown";
 import { MentionAutocomplete } from "@/components/comments/mention-autocomplete";
@@ -31,13 +31,10 @@ export function TaskComments({
   currentUserEmail,
   assignees = [],
 }: TaskCommentsProps) {
-  const { showToast } = useToast();
+  const { run, error, setError, isPending } = useActionRunner();
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const [isPending, startTransition] = useTransition();
 
   // Mention state
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -82,27 +79,6 @@ export function TaskComments({
     setMentionQuery(null);
   }
 
-  function runAction(action: () => Promise<unknown>, onSuccess?: () => void) {
-    setError(null);
-    setPending(true);
-    startTransition(async () => {
-      try {
-        await action();
-        onSuccess?.();
-      } catch (caught) {
-        setError(
-          caught instanceof Error ? caught.message : "Something went wrong. Please try again.",
-        );
-        showToast(
-          caught instanceof Error ? caught.message : "Something went wrong. Please try again.",
-          "error",
-        );
-      } finally {
-        setPending(false);
-      }
-    });
-  }
-
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     const parsed = createCommentSchema.safeParse({ taskId, content: draft });
@@ -121,21 +97,16 @@ export function TaskComments({
       author: currentAuthor,
     };
 
-    startTransition(async () => {
-      addOptimisticComment(optimistic);
-      setDraft("");
-      setMentionQuery(null);
-      setError(null);
-      try {
-        await createComment({ taskId, content: parsed.data.content });
-        showToast("Comment added!", "success");
-      } catch (caught) {
-        setDraft(parsed.data.content);
-        showToast(
-          caught instanceof Error ? caught.message : "Something went wrong. Please try again.",
-          "error",
-        );
-      }
+    const savedDraft = draft;
+    setDraft("");
+    setMentionQuery(null);
+
+    run(() => createComment({ taskId, content: parsed.data.content }), {
+      optimistic: () => addOptimisticComment(optimistic),
+      successMessage: "Comment added!",
+      onError: () => {
+        setDraft(savedDraft);
+      },
     });
   }
 
@@ -151,14 +122,13 @@ export function TaskComments({
       setError(parsed.error.issues[0]?.message ?? "Invalid comment");
       return;
     }
-    runAction(
-      () => updateComment({ commentId: comment.id, content: parsed.data.content }),
-      () => {
+    run(() => updateComment({ commentId: comment.id, content: parsed.data.content }), {
+      successMessage: "Comment updated!",
+      onSuccess: () => {
         setEditingId(null);
         setEditingContent("");
-        showToast("Comment updated!", "success");
       },
-    );
+    });
   }
 
   return (
@@ -259,11 +229,11 @@ export function TaskComments({
                         {canDelete ? (
                           <button
                             className="rounded-lg border border-rose-200/80 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600 transition hover:bg-rose-500 hover:text-white hover:border-rose-500 dark:border-red-900/80 dark:bg-red-950/60 dark:text-red-300 dark:hover:bg-red-600 dark:hover:text-white cursor-pointer"
+                            disabled={isPending}
                             onClick={() =>
-                              runAction(
-                                () => deleteComment(comment.id),
-                                () => showToast("Comment deleted!", "success"),
-                              )
+                              run(() => deleteComment(comment.id), {
+                                successMessage: "Comment deleted!",
+                              })
                             }
                             type="button"
                           >
@@ -303,7 +273,7 @@ export function TaskComments({
         />
         <button
           className="shrink-0 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-          disabled={isPending || pending || draft.trim().length === 0}
+          disabled={isPending || draft.trim().length === 0}
           type="submit"
         >
           Post

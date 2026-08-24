@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DraggableTaskCard } from "@/components/board/draggable-task-card";
@@ -14,6 +15,7 @@ type DroppableColumnProps = {
   isAdmin: boolean;
   currentUserId: string;
   isPending: boolean;
+  activeViewersMap?: Record<string, string[]>;
   onStatusChange: (taskId: string, status: TaskStatusValue) => void;
   onAssigneeChange: (taskId: string, assigneeId: string) => void;
   onView: (task: BoardTask) => void;
@@ -59,6 +61,7 @@ export function DroppableColumn({
   isAdmin,
   currentUserId,
   isPending,
+  activeViewersMap,
   onStatusChange,
   onAssigneeChange,
   onView,
@@ -69,6 +72,8 @@ export function DroppableColumn({
 
   const isAtLimit = column.wipLimit !== null && tasks.length >= column.wipLimit;
   const isOverLimit = column.wipLimit !== null && tasks.length > column.wipLimit;
+
+  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
 
   return (
     <section
@@ -116,7 +121,7 @@ export function DroppableColumn({
 
       {/* Droppable sortable area */}
       <div ref={setNodeRef} className="space-y-3 min-h-16">
-        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <DraggableTaskCard
               key={task.id}
@@ -125,6 +130,7 @@ export function DroppableColumn({
               isAdmin={isAdmin}
               currentUserId={currentUserId}
               isPending={isPending}
+              activeViewers={activeViewersMap?.[task.id]}
               onStatusChange={onStatusChange}
               onAssigneeChange={onAssigneeChange}
               onView={onView}

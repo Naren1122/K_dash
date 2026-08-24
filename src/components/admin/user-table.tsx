@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Trash2, UserPlus } from "lucide-react";
 import { CreateUserDialog } from "./create-user-dialog";
 import { deleteUser } from "@/actions/users";
-import { useToast } from "@/components/providers/toast-provider";
+import { useActionRunner } from "@/hooks/useActionRunner";
 import { Pagination } from "@/components/ui/pagination";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import type { Role } from "@prisma/client";
@@ -27,7 +27,7 @@ export function UserTable({ users }: UserTableProps) {
   const [deletingUser, setDeletingUser] = useState<UserItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
-  const { showToast } = useToast();
+  const { run } = useActionRunner();
 
   const totalPages = Math.max(1, Math.ceil(users.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -37,17 +37,14 @@ export function UserTable({ users }: UserTableProps) {
     return users.slice(start, start + pageSize);
   }, [users, safePage, pageSize]);
 
-  async function handleDeleteConfirm() {
+  function handleDeleteConfirm() {
     if (!deletingUser) return;
     const target = deletingUser;
     setDeletingUser(null);
 
-    try {
-      await deleteUser(target.id);
-      showToast(`Member ${target.name || target.email} has been removed.`, "success");
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to delete user", "error");
-    }
+    run(() => deleteUser(target.id), {
+      successMessage: `Member ${target.name || target.email} has been removed.`,
+    });
   }
 
   return (

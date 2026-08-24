@@ -12,6 +12,7 @@ import {
 } from "@/lib/schemas/usersSchema";
 import { createUser } from "@/actions/users";
 import { Input } from "@/components/ui/input";
+import { useActionRunner } from "@/hooks/useActionRunner";
 import { useToast } from "@/components/providers/toast-provider";
 
 type CreateUserDialogProps = {
@@ -22,9 +23,8 @@ type CreateUserDialogProps = {
 export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
   const [visible, setVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
+  const { run, error: serverError, isPending: isSubmitting } = useActionRunner();
   const { showToast } = useToast();
 
   const {
@@ -71,20 +71,14 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
 
   if (!isOpen) return null;
 
-  async function onSubmit(data: CreateUserInput) {
-    setServerError(null);
-    setIsSubmitting(true);
-
-    try {
-      const result = await createUser(data);
-      showToast(`User ${result.email} added successfully as ${result.role}`, "success");
-      reset();
-      onClose();
-    } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Failed to create user");
-    } finally {
-      setIsSubmitting(false);
-    }
+  function onSubmit(data: CreateUserInput) {
+    run(() => createUser(data), {
+      onSuccess: (result) => {
+        showToast(`User ${result.email} added successfully as ${result.role}`, "success");
+        reset();
+        onClose();
+      },
+    });
   }
 
   function handleBackdropClick(e: React.MouseEvent) {

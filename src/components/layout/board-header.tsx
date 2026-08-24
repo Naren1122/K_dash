@@ -4,39 +4,31 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Label } from "@/types/types";
 import type { DueDateFilterOption, SortOption } from "@/utils/taskFilterSort";
+import { useBoardFilterStore, useBoardModalStore } from "@/lib/stores";
 
 type BoardHeaderProps = {
   isAdmin: boolean;
-  showCreateForm: boolean;
-  onToggleCreateForm: () => void;
-  activeView: "kanban" | "list" | "calendar" | "timeline";
-  onViewChange: (view: "kanban" | "list" | "calendar" | "timeline") => void;
   labels: Label[];
-  selectedLabelIds: string[];
-  onToggleLabelFilter: (labelId: string) => void;
-  onClearLabelFilter: () => void;
-  dueDateFilter: DueDateFilterOption;
-  onDueDateFilterChange: (option: DueDateFilterOption) => void;
-  sortBy: SortOption;
-  onSortByChange: (option: SortOption) => void;
+  presenceNode?: React.ReactNode;
 };
 
-export function BoardHeader({
-  isAdmin,
-  showCreateForm,
-  onToggleCreateForm,
-  activeView,
-  onViewChange,
-  labels,
-  selectedLabelIds,
-  onToggleLabelFilter,
-  onClearLabelFilter,
-  dueDateFilter,
-  onDueDateFilterChange,
-  sortBy,
-  onSortByChange,
-}: BoardHeaderProps) {
+export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps) {
   const [showLabelDropdown, setShowLabelDropdown] = useState(false);
+
+  // Zustand Filter Store
+  const activeView = useBoardFilterStore((state) => state.activeView);
+  const setActiveView = useBoardFilterStore((state) => state.setActiveView);
+  const selectedLabelIds = useBoardFilterStore((state) => state.selectedLabelIds);
+  const toggleLabelFilter = useBoardFilterStore((state) => state.toggleLabelFilter);
+  const clearLabelFilters = useBoardFilterStore((state) => state.clearLabelFilters);
+  const dueDateFilter = useBoardFilterStore((state) => state.dueDateFilter);
+  const setDueDateFilter = useBoardFilterStore((state) => state.setDueDateFilter);
+  const sortBy = useBoardFilterStore((state) => state.sortBy);
+  const setSortBy = useBoardFilterStore((state) => state.setSortBy);
+
+  // Zustand Modal Store
+  const isCreateFormOpen = useBoardModalStore((state) => state.isCreateFormOpen);
+  const toggleCreateForm = useBoardModalStore((state) => state.toggleCreateForm);
 
   return (
     <div className="space-y-4">
@@ -54,6 +46,8 @@ export function BoardHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {presenceNode}
+
           {isAdmin ? (
             <Link
               href="/admin/analytics"
@@ -74,7 +68,7 @@ export function BoardHeader({
               <button
                 key={view.id}
                 type="button"
-                onClick={() => onViewChange(view.id)}
+                onClick={() => setActiveView(view.id)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer ${
                   activeView === view.id
                     ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
@@ -89,11 +83,11 @@ export function BoardHeader({
           {isAdmin ? (
             <button
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] focus:outline-none cursor-pointer"
-              onClick={onToggleCreateForm}
+              onClick={toggleCreateForm}
               type="button"
             >
               <span className="text-base leading-none font-bold">+</span>
-              {showCreateForm ? "Close Form" : "Create Task"}
+              {isCreateFormOpen ? "Close Form" : "Create Task"}
             </button>
           ) : null}
         </div>
@@ -129,7 +123,7 @@ export function BoardHeader({
                     <button
                       type="button"
                       onClick={() => {
-                        onClearLabelFilter();
+                        clearLabelFilters();
                         setShowLabelDropdown(false);
                       }}
                       className="text-[10px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
@@ -149,7 +143,7 @@ export function BoardHeader({
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => onToggleLabelFilter(label.id)}
+                          onChange={() => toggleLabelFilter(label.id)}
                           className="h-3.5 w-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-800"
                         />
                         <span
@@ -171,7 +165,7 @@ export function BoardHeader({
           {/* Due Date Filter */}
           <select
             value={dueDateFilter}
-            onChange={(e) => onDueDateFilterChange(e.target.value as DueDateFilterOption)}
+            onChange={(e) => setDueDateFilter(e.target.value as DueDateFilterOption)}
             className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-white focus:border-sky-500 focus:bg-white dark:border-slate-700 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500 dark:hover:bg-slate-600 dark:focus:bg-slate-700 cursor-pointer"
           >
             <option value="all">📅 All Due Dates</option>
@@ -188,7 +182,7 @@ export function BoardHeader({
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">Sort by:</span>
           <select
             value={sortBy}
-            onChange={(e) => onSortByChange(e.target.value as SortOption)}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
             className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-white focus:border-sky-500 focus:bg-white dark:border-slate-700 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500 dark:hover:bg-slate-600 dark:focus:bg-slate-700 cursor-pointer"
           >
             <option value="priority_desc">🔥 Priority: High → Low</option>

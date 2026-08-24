@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition, useOptimistic } from "react";
+import { startTransition, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   createTask,
@@ -9,19 +10,17 @@ import {
   updateTask,
   updateTaskStatus,
 } from "@/actions/tasks";
-import { useToast } from "@/components/providers/toast-provider";
+import { useActionRunner } from "@/hooks/useActionRunner";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { BoardHeader } from "@/components/layout/board-header";
 import { KanbanView } from "@/components/views/kanban-view";
 import type { Assignee, BoardTask, Label } from "@/types/types";
 import type { BoardColumn } from "@/types/column-types";
 import type { CreateTaskInput, TaskStatusValue } from "@/lib/schemas/tasksSchema";
-import {
-  filterTasks,
-  sortTasks,
-  type DueDateFilterOption,
-  type SortOption,
-} from "@/utils/taskFilterSort";
+import { filterTasks, sortTasks } from "@/utils/taskFilterSort";
+import { useBoardFilterStore, useBoardModalStore } from "@/lib/stores";
+import { useBoardRealtime } from "@/hooks/useBoardRealtime";
+import { LivePresenceBar } from "@/components/board/live-presence-bar";
 
 // Dynamic imports for secondary views and dialogs to reduce initial client bundle
 const ListView = dynamic(
@@ -74,9 +73,6 @@ function ViewLoadingSkeleton() {
   );
 }
 
-const VIEW_STORAGE_KEY = "kanban_active_view";
-type ActiveView = "kanban" | "list" | "calendar" | "timeline";
-
 type BoardProps = {
   assignee: Assignee[];
   labels: Label[];
@@ -93,10 +89,6 @@ type OptimisticAction =
   | { type: "assignee"; taskId: string; assigneeId: string }
   | { type: "delete"; taskId: string };
 
-function actionErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Something went wrong. Please try again.";
-}
-
 export function Board({
   assignee,
   labels,
@@ -107,73 +99,85 @@ export function Board({
   userName,
   userEmail,
 }: BoardProps) {
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [viewingTaskId, setViewingTaskId] = useState<string | null>(null);
-  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const [activeView, setActiveView] = useState<ActiveView>("kanban");
-  const { showToast } = useToast();
+  const { run, error, setError, isPending } = useActionRunner();
 
-  // Optimistic UI updates for instant 60fps drag-and-drop & status changes
-  const [optimisticTasks, setOptimisticTasks] = useOptimistic(
-    tasks,
-    (currentTasks: BoardTask[], action: OptimisticAction) => {
-      if (action.type === "status") {
-        return currentTasks.map((t) =>
-          t.id === action.taskId ? { ...t, status: action.status } : t
-        );
-      }
-      if (action.type === "assignee") {
-        const newAssignee = assignee.find((a) => a.id === action.assigneeId) ?? null;
-        return currentTasks.map((t) =>
-          t.id === action.taskId ? { ...t, assignee: newAssignee } : t
-        );
-      }
-      if (action.type === "delete") {
-        return currentTasks.filter((t) => t.id !== action.taskId);
-      }
-      return currentTasks;
-    }
-  );
+  // Zustand Modal Store
+  const isCreateFormOpen = useBoardModalStore((state) => state.isCreateFormOpen);
+  const closeCreateForm = useBoardModalStore((state) => state.closeCreateForm);
+  const viewingTaskId = useBoardModalStore((state) => state.viewingTaskId);
+  const openTaskDetail = useBoardModalStore((state) => state.openTaskDetail);
+  const closeTaskDetail = useBoardModalStore((state) => state.closeTaskDetail);
+  const deletingTaskId = useBoardModalStore((state) => state.deletingTaskId);
+  const openDeleteConfirm = useBoardModalStore((state) => state.openDeleteConfirm);
+  const closeDeleteConfirm = useBoardModalStore((state) => state.closeDeleteConfirm);
 
-  useEffect(() => {
-    const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as ActiveView | null;
-    if (savedView && ["kanban", "list", "calendar", "timeline"].includes(savedView)) {
-      const raf = requestAnimationFrame(() => setActiveView(savedView));
-      return () => cancelAnimationFrame(raf);
-    }
-  }, []);
+  // Zustand Filter Store
+  const activeView = useBoardFilterStore((state) => state.activeView);
+  const selectedLabelIds = useBoardFilterStore((state) => state.selectedLabelIds);
+  const dueDateFilter = useBoardFilterStore((state) => state.dueDateFilter);
+  const sortBy = useBoardFilterStore((state) => state.sortBy);
+  const currentPage = useBoardFilterStore((state) => state.currentPage);
+  const setCurrentPage = useBoardFilterStore((state) => state.setCurrentPage);
 
-  function handleViewChange(view: ActiveView) {
-    setActiveView(view);
-    localStorage.setItem(VIEW_STORAGE_KEY, view);
-    setCurrentPage(1);
+  // Local reactive tasks state synced with server props & realtime WebSocket updates
+  const [liveTasks, setLiveTasks] = useState<BoardTask[]>(tasks);
+  const [prevServerTasks, setPrevServerTasks] = useState<BoardTask[]>(tasks);
+
+  if (tasks !== prevServerTasks) {
+    setPrevServerTasks(tasks);
+    setLiveTasks(tasks);
   }
 
-  // Filter, Sort & Pagination State
-  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
-  const [dueDateFilter, setDueDateFilter] = useState<DueDateFilterOption>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("priority_desc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(3);
-
   const isAdmin = role === "ADMIN";
-  const myTasks = optimisticTasks.filter((task) => task.assignee?.id === userId).length;
+
+  const router = useRouter();
+
+  // Realtime hook for multi-user sync and online presence
+  const {
+    onlineUsers,
+    isConnected,
+    activeViewersMap,
+    broadcastTaskMoved,
+    broadcastTaskSaved,
+    broadcastTaskDeleted,
+  } = useBoardRealtime({
+    userId,
+    userName,
+    userEmail,
+    role,
+    activeTaskId: viewingTaskId,
+    onRemoteTaskMoved: ({ taskId, status }) => {
+      setLiveTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status } : t))
+      );
+    },
+    onRemoteTaskSaved: ({ task }) => {
+      setLiveTasks((prev) => {
+        if (role === "MEMBER" && task.assignee?.id !== userId) {
+          return prev.filter((t) => t.id !== task.id);
+        }
+        const exists = prev.some((t) => t.id === task.id);
+        if (exists) {
+          return prev.map((t) => (t.id === task.id ? task : t));
+        }
+        return [task, ...prev];
+      });
+    },
+    onRemoteTaskDeleted: ({ taskId }) => {
+      setLiveTasks((prev) => prev.filter((t) => t.id !== taskId));
+    },
+  });
+
+  const myTasks = liveTasks.filter((task) => task.assignee?.id === userId).length;
   const viewingTask = viewingTaskId
-    ? optimisticTasks.find((task) => task.id === viewingTaskId) ?? null
+    ? liveTasks.find((task) => task.id === viewingTaskId) ?? null
     : null;
 
   // Processed tasks (filtered + sorted) — shared across all views
   const processedTasks = useMemo(() => {
-    const filtered = filterTasks(optimisticTasks, { selectedLabelIds, dueDateFilter });
+    const filtered = filterTasks(liveTasks, { selectedLabelIds, dueDateFilter });
     return sortTasks(filtered, sortBy);
-  }, [optimisticTasks, selectedLabelIds, dueDateFilter, sortBy]);
-
-  // Reset to Page 1 when filters/sorting change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedLabelIds, dueDateFilter, sortBy, pageSize]);
+  }, [liveTasks, selectedLabelIds, dueDateFilter, sortBy]);
 
   const totalPages = useMemo(() => {
     if (activeView === "kanban") {
@@ -218,118 +222,91 @@ export function Board({
     return [1, "...", current - 1, current, current + 1, "...", total];
   }
 
-  function toggleLabelFilter(labelId: string) {
-    setSelectedLabelIds((prev) =>
-      prev.includes(labelId) ? prev.filter((id) => id !== labelId) : [...prev, labelId]
-    );
-  }
-
-  function runAction(action: () => Promise<unknown>, onSuccess?: () => void) {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await action();
-        onSuccess?.();
-      } catch (caughtError) {
-        setError(actionErrorMessage(caughtError));
-        showToast(actionErrorMessage(caughtError), "error");
-      }
-    });
-  }
-
   function onCreateTask(data: CreateTaskInput) {
-    runAction(
-      () => createTask(data),
-      () => {
-        setShowCreateForm(false);
-        showToast("Task created successfully!", "success");
+    run(async () => {
+      const createdTask = await createTask(data);
+      if (createdTask) {
+        setLiveTasks((prev) => [createdTask, ...prev]);
+        broadcastTaskSaved(createdTask, true);
       }
-    );
+      return createdTask;
+    }, {
+      successMessage: "Task created successfully!",
+      onSuccess: () => closeCreateForm(),
+    });
   }
 
   function onUpdateTask(taskId: string, data: CreateTaskInput) {
-    runAction(
-      () => updateTask({ taskId, ...data }),
-      () => showToast("Task updated successfully!", "success")
-    );
-  }
-
-  function onStatusChange(taskId: string, status: TaskStatusValue) {
-    setError(null);
-    startTransition(async () => {
-      setOptimisticTasks({ type: "status", taskId, status });
-      try {
-        await updateTaskStatus({ taskId, status });
-      } catch (caughtError) {
-        setError(actionErrorMessage(caughtError));
-        showToast(actionErrorMessage(caughtError), "error");
+    run(async () => {
+      const updatedTask = await updateTask({ taskId, ...data });
+      if (updatedTask) {
+        setLiveTasks((prev) => prev.map((t) => (t.id === taskId ? updatedTask : t)));
+        broadcastTaskSaved(updatedTask, false);
       }
+      return updatedTask;
+    }, {
+      successMessage: "Task updated successfully!",
     });
   }
 
+  function onStatusChange(taskId: string, status: TaskStatusValue) {
+    setLiveTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status } : t))
+    );
+    broadcastTaskMoved(taskId, status);
+    run(() => updateTaskStatus({ taskId, status }));
+  }
+
   function onAssigneeChange(taskId: string, assigneeId: string) {
-    setError(null);
-    startTransition(async () => {
-      setOptimisticTasks({ type: "assignee", taskId, assigneeId });
-      try {
-        await reassignTask({ taskId, assigneeId });
-      } catch (caughtError) {
-        setError(actionErrorMessage(caughtError));
-        showToast(actionErrorMessage(caughtError), "error");
+    const newAssignee = assignee.find((a) => a.id === assigneeId) ?? null;
+    setLiveTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, assignee: newAssignee } : t))
+    );
+    run(async () => {
+      const reassignedTask = await reassignTask({ taskId, assigneeId });
+      if (reassignedTask) {
+        broadcastTaskSaved(reassignedTask, false);
       }
+      return reassignedTask;
     });
   }
 
   function onDeleteTask(taskId: string) {
     const id = taskId;
-    setDeletingTaskId(null);
-    startTransition(async () => {
-      setOptimisticTasks({ type: "delete", taskId: id });
-      try {
-        await deleteTask(id);
-        showToast("Task deleted successfully!", "success");
-      } catch (caughtError) {
-        setError(actionErrorMessage(caughtError));
-        showToast(actionErrorMessage(caughtError), "error");
-      }
+    closeDeleteConfirm();
+    setLiveTasks((prev) => prev.filter((t) => t.id !== id));
+    broadcastTaskDeleted(id);
+    run(() => deleteTask(id), {
+      successMessage: "Task deleted successfully!",
     });
   }
 
-  // Called when a task is dropped onto a new column (dnd) with instant optimistic update
   function onDrop(taskId: string, newStatus: TaskStatusValue) {
-    setError(null);
-    startTransition(async () => {
-      setOptimisticTasks({ type: "status", taskId, status: newStatus });
-      try {
-        await updateTaskStatus({ taskId, status: newStatus });
-        showToast("Task moved!", "success");
-      } catch (caughtError) {
-        setError(actionErrorMessage(caughtError));
-        showToast(actionErrorMessage(caughtError), "error");
-      }
+    setLiveTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+    );
+    broadcastTaskMoved(taskId, newStatus);
+    run(() => updateTaskStatus({ taskId, status: newStatus }), {
+      successMessage: "Task moved!",
     });
   }
 
-  const inProgressCount = optimisticTasks.filter((task) => task.status === "IN_PROGRESS").length;
-  const doneCount = optimisticTasks.filter((task) => task.status === "DONE").length;
+  const inProgressCount = liveTasks.filter((task) => task.status === "IN_PROGRESS").length;
+  const doneCount = liveTasks.filter((task) => task.status === "DONE").length;
 
   return (
     <main className="p-6 md:p-8 space-y-6">
       {/* Board Header & Controls */}
       <BoardHeader
-        activeView={activeView}
-        dueDateFilter={dueDateFilter}
         isAdmin={isAdmin}
         labels={labels}
-        onClearLabelFilter={() => setSelectedLabelIds([])}
-        onDueDateFilterChange={setDueDateFilter}
-        onSortByChange={setSortBy}
-        onToggleCreateForm={() => setShowCreateForm((prev) => !prev)}
-        onToggleLabelFilter={toggleLabelFilter}
-        onViewChange={handleViewChange}
-        selectedLabelIds={selectedLabelIds}
-        showCreateForm={showCreateForm}
-        sortBy={sortBy}
+        presenceNode={
+          <LivePresenceBar
+            onlineUsers={onlineUsers}
+            isConnected={isConnected}
+            currentUserId={userId}
+          />
+        }
       />
 
       {/* Metrics Banner */}
@@ -341,7 +318,7 @@ export function Board({
               📊
             </span>
           </div>
-          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{optimisticTasks.length}</p>
+          <p className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{liveTasks.length}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
           <div className="flex items-center justify-between">
@@ -368,16 +345,24 @@ export function Board({
       </div>
 
       {error ? (
-        <p
-          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 shadow-sm dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+        <div
+          className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 shadow-sm dark:border-red-900 dark:bg-red-950 dark:text-red-300"
           role="alert"
         >
-          {error}
-        </p>
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-3 text-xs font-semibold text-red-500 hover:text-red-800 dark:hover:text-red-200"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
       ) : null}
 
       {/* Create Task Form */}
-      {isAdmin && showCreateForm ? (
+      {isAdmin && isCreateFormOpen ? (
         <CreateTaskForm
           assignee={assignee}
           error={error}
@@ -397,10 +382,11 @@ export function Board({
           isAdmin={isAdmin}
           currentUserId={userId}
           isPending={isPending}
+          activeViewersMap={activeViewersMap}
           onStatusChange={onStatusChange}
           onAssigneeChange={onAssigneeChange}
-          onView={(task) => setViewingTaskId(task.id)}
-          onDelete={setDeletingTaskId}
+          onView={(task) => openTaskDetail(task.id)}
+          onDelete={openDeleteConfirm}
           onDrop={onDrop}
         />
       ) : activeView === "list" ? (
@@ -411,18 +397,18 @@ export function Board({
           currentUserId={userId}
           isPending={isPending}
           onStatusChange={onStatusChange}
-          onView={(task) => setViewingTaskId(task.id)}
-          onDelete={setDeletingTaskId}
+          onView={(task) => openTaskDetail(task.id)}
+          onDelete={openDeleteConfirm}
         />
       ) : activeView === "timeline" ? (
         <TimelineView
           tasks={paginatedTasks}
-          onViewTask={(task) => setViewingTaskId(task.id)}
+          onViewTask={(task) => openTaskDetail(task.id)}
         />
       ) : (
         <CalendarView
           tasks={paginatedTasks}
-          onViewTask={(task) => setViewingTaskId(task.id)}
+          onViewTask={(task) => openTaskDetail(task.id)}
         />
       )}
 
@@ -431,7 +417,7 @@ export function Board({
         <button
           type="button"
           disabled={safePage <= 1}
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
           aria-label="Previous Page"
         >
@@ -463,7 +449,7 @@ export function Board({
         <button
           type="button"
           disabled={safePage >= totalPages}
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          onClick={() => setCurrentPage((p: number) => Math.min(totalPages, p + 1))}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
           aria-label="Next Page"
         >
@@ -479,7 +465,7 @@ export function Board({
           isPending={isPending}
           isSubmitting={isPending}
           labels={labels}
-          onClose={() => setViewingTaskId(null)}
+          onClose={closeTaskDetail}
           onUpdate={onUpdateTask}
           role={role}
           task={viewingTask}
@@ -492,9 +478,9 @@ export function Board({
       {/* Confirm Delete Dialog */}
       {deletingTaskId ? (
         <ConfirmDialog
-          onCancel={() => setDeletingTaskId(null)}
+          onCancel={closeDeleteConfirm}
           onConfirm={() => onDeleteTask(deletingTaskId)}
-          taskTitle={optimisticTasks.find((task) => task.id === deletingTaskId)?.title ?? "this task"}
+          taskTitle={liveTasks.find((task) => task.id === deletingTaskId)?.title ?? "this task"}
         />
       ) : null}
     </main>

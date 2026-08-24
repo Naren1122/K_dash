@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import { revalidatePath } from "next/cache";
@@ -15,10 +16,16 @@ import {
 } from "@/lib/schemas/columnSchema";
 import { logger } from "@/utils/logger";
 import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/utils/action-utils";
-
-import { notifyAllAdmins } from "@/lib/data/notifications";
+import type { BoardColumn } from "@/types/column-types";
+import { notifyAllAdmins } from "@/actions/notifications";
 
 const actionLogger = logger.action.bind(logger);
+
+export const getBoardColumns = cache(async (): Promise<BoardColumn[]> => {
+  return prisma.column.findMany({
+    orderBy: { position: "asc" },
+  });
+});
 
 export async function getColumns(boardId?: string) {
   await getCurrentUser();

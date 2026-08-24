@@ -14,8 +14,8 @@ import {
 import { logger } from "@/utils/logger";
 import { ActionError, getCurrentUser, getTaskOrThrow, parseOrThrow } from "@/utils/action-utils";
 
-import { createActivityLog } from "@/lib/data/activity";
-import { notifyTaskStakeholders } from "@/lib/data/notifications";
+import { createActivityLog } from "@/actions/activity";
+import { notifyTaskStakeholders } from "@/actions/notifications";
 
 const actionLogger = logger.action.bind(logger);
 

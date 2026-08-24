@@ -12,6 +12,7 @@ type DraggableTaskCardProps = {
   isAdmin: boolean;
   currentUserId: string;
   isPending: boolean;
+  activeViewers?: string[];
   onStatusChange: (taskId: string, status: TaskStatusValue) => void;
   onAssigneeChange: (taskId: string, assigneeId: string) => void;
   onView: (task: BoardTask) => void;

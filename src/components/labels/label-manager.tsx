@@ -13,17 +13,15 @@ import {
 } from "@/lib/schemas/labelsSchema";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-import type { Label } from "@/types/types";
-import { useToast } from "@/components/providers/toast-provider";
+import { Label } from "@/types/types";
+import { useActionRunner } from "@/hooks/useActionRunner";
 
 type LabelManagerProps = {
   labels: Label[];
 };
 
 export function LabelManager({ labels }: LabelManagerProps) {
-  const { showToast } = useToast();
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const { run, error, setError, isPending } = useActionRunner();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
@@ -50,23 +48,6 @@ export function LabelManager({ labels }: LabelManagerProps) {
 
   const selectedColor = useWatch({ control, name: "color" }) ?? "#3b82f6";
 
-  async function runAction(action: () => Promise<unknown>, successMessage: string) {
-    setError(null);
-    setPending(true);
-    try {
-      await action();
-      showToast(successMessage, "success");
-      reset({ name: "", color: "#3b82f6" });
-      setEditingId(null);
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Something went wrong. Please try again.",
-      );
-    } finally {
-      setPending(false);
-    }
-  }
-
   function startEdit(label: Label) {
     const color = (labelColors as readonly string[]).includes(label.color)
       ? label.color
@@ -79,14 +60,25 @@ export function LabelManager({ labels }: LabelManagerProps) {
 
   function onSubmit(data: CreateLabelInput) {
     if (editingId) {
-      runAction(
+      run(
         () => updateLabel({ id: editingId, name: data.name, color: data.color }),
-        "Label updated successfully!",
+        {
+          successMessage: "Label updated successfully!",
+          onSuccess: () => {
+            reset({ name: "", color: "#3b82f6" });
+            setEditingId(null);
+          },
+        }
       );
     } else {
-      runAction(
+      run(
         () => createLabel({ name: data.name, color: data.color }),
-        "Label created successfully!",
+        {
+          successMessage: "Label created successfully!",
+          onSuccess: () => {
+            reset({ name: "", color: "#3b82f6" });
+          },
+        }
       );
     }
   }
@@ -147,10 +139,10 @@ export function LabelManager({ labels }: LabelManagerProps) {
         <div className="flex items-end gap-2 sm:col-span-2">
           <button
             className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 dark:bg-sky-600 dark:hover:bg-sky-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={pending}
+            disabled={isPending}
             type="submit"
           >
-            {pending ? "Saving..." : editingId ? "Save changes" : "Add label"}
+            {isPending ? "Saving..." : editingId ? "Save changes" : "Add label"}
           </button>
           {editingId ? (
             <button
@@ -197,8 +189,11 @@ export function LabelManager({ labels }: LabelManagerProps) {
                 </button>
                 <button
                   className="rounded-lg px-2.5 py-1 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/60 cursor-pointer"
+                  disabled={isPending}
                   onClick={() =>
-                    runAction(() => deleteLabel(label.id), "Label deleted successfully!")
+                    run(() => deleteLabel(label.id), {
+                      successMessage: "Label deleted successfully!",
+                    })
                   }
                   type="button"
                 >

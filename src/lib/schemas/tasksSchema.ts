@@ -31,6 +31,22 @@ function optionalNullableDateField() {
           code: z.ZodIssueCode.custom,
           message: "Year must be between 1900 and 2100",
         });
+        return;
+      }
+
+      // Check if date is in the past (before today's local date at 00:00:00)
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      
+      // Determine input date at 00:00:00 in UTC & local to be timezone resilient
+      const inputUtc = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).getTime();
+      const inputLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+      if (Math.max(inputUtc, inputLocal) < startOfToday) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Due date cannot be in the past. Please select today or a future date.",
+        });
       }
     });
 }

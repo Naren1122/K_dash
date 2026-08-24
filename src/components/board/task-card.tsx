@@ -13,6 +13,7 @@ type TaskCardProps = {
   isAdmin: boolean;
   currentUserId: string;
   isPending: boolean;
+  activeViewers?: string[];
   onStatusChange: (taskId: string, status: TaskStatusValue) => void;
   onAssigneeChange: (taskId: string, assigneeId: string) => void;
   onView: (task: BoardTask) => void;
@@ -25,6 +26,7 @@ export function TaskCard({
   isAdmin,
   currentUserId,
   isPending,
+  activeViewers,
   onStatusChange,
   onAssigneeChange,
   onView,
@@ -33,7 +35,20 @@ export function TaskCard({
   const canUpdateStatus = isAdmin || task.assignee?.id === currentUserId;
 
   return (
-    <article className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+    <article className={`group rounded-2xl border bg-white p-4 shadow-xs transition dark:bg-slate-900 ${
+      activeViewers && activeViewers.length > 0
+        ? "border-indigo-400 ring-2 ring-indigo-400/20 dark:border-indigo-600 dark:ring-indigo-600/20"
+        : "border-slate-200 hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:hover:border-slate-700"
+    }`}>
+      {activeViewers && activeViewers.length > 0 && (
+        <div className="mb-2.5 flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
+          </span>
+          <span>👀 {activeViewers.join(", ")} viewing</span>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold leading-5 text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
           {task.title}
@@ -69,7 +84,7 @@ export function TaskCard({
           <select
             aria-label={`Status for ${task.title}`}
             className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none transition hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-            defaultValue={task.status}
+            value={task.status}
             disabled={!canUpdateStatus || isPending}
             onChange={(event) => onStatusChange(task.id, event.target.value as TaskStatusValue)}
           >
@@ -87,7 +102,7 @@ export function TaskCard({
             <select
               aria-label={`Assignee for ${task.title}`}
               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none transition hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-              defaultValue={task.assignee?.id ?? ""}
+              value={task.assignee?.id ?? ""}
               disabled={isPending}
               onChange={(event) => onAssigneeChange(task.id, event.target.value)}
             >

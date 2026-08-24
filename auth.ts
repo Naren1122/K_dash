@@ -76,13 +76,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role as Role;
         authLogger("jwt_created", { userId: user.id, role: user.role });
       }
-      
+
       // 2. Handle manual session updates if triggered elsewhere in the app
       if (trigger === "update" && session) {
         if (session.role) token.role = session.role;
         authLogger("jwt_updated", { userId: token.sub });
       }
-      
+
       return token;
     },
     async session({ session, token }) {
@@ -90,7 +90,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = (token.id as string) || (token.sub as string);
         session.user.role = token.role as Role;
-        
+
         authLogger("session_created", { userId: session.user.id, role: session.user.role });
       }
       return session;

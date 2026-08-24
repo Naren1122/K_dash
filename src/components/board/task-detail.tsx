@@ -190,10 +190,15 @@ export function TaskDetail({
                 </>
               ) : null}
 
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Due date
-                <Input type="date" {...register("dueDate")} />
-              </label>
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Due date
+                  <Input type="date" min={new Date().toISOString().split("T")[0]} {...register("dueDate")} />
+                </label>
+                {errors.dueDate ? (
+                  <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.dueDate.message}</p>
+                ) : null}
+              </div>
 
               <div className="sm:col-span-2">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">

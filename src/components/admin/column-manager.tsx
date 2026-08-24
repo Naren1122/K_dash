@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { createColumn, updateColumn, deleteColumn, reorderColumns } from "@/actions/columns";
-import { useToast } from "@/components/providers/toast-provider";
+import { useActionRunner } from "@/hooks/useActionRunner";
 import { Pagination } from "@/components/ui/pagination";
 import type { BoardColumn } from "@/types/column-types";
 
@@ -24,9 +24,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export function ColumnManager({ columns, boardId }: ColumnManagerProps) {
-  const { showToast } = useToast();
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { run, error, isPending } = useActionRunner();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,24 +48,10 @@ export function ColumnManager({ columns, boardId }: ColumnManagerProps) {
   const [editName, setEditName] = useState("");
   const [editWipLimit, setEditWipLimit] = useState("");
 
-  function runAction(action: () => Promise<unknown>, onSuccess?: () => void) {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await action();
-        onSuccess?.();
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Something went wrong";
-        setError(msg);
-        showToast(msg, "error");
-      }
-    });
-  }
-
   function handleAddColumn(e: React.FormEvent) {
     e.preventDefault();
     if (!newName.trim()) return;
-    runAction(
+    run(
       () =>
         createColumn({
           name: newName.trim(),
@@ -75,12 +59,14 @@ export function ColumnManager({ columns, boardId }: ColumnManagerProps) {
           wipLimit: newWipLimit ? parseInt(newWipLimit, 10) || null : null,
           boardId,
         }),
-      () => {
-        setNewName("");
-        setNewWipLimit("");
-        setShowAddForm(false);
-        showToast("Column created!", "success");
-      },
+      {
+        successMessage: "Column created!",
+        onSuccess: () => {
+          setNewName("");
+          setNewWipLimit("");
+          setShowAddForm(false);
+        },
+      }
     );
   }
 
@@ -91,25 +77,26 @@ export function ColumnManager({ columns, boardId }: ColumnManagerProps) {
   }
 
   function handleSaveEdit(col: BoardColumn) {
-    runAction(
+    run(
       () =>
         updateColumn({
           columnId: col.id,
           name: editName.trim() || col.name,
           wipLimit: editWipLimit ? parseInt(editWipLimit, 10) || null : null,
         }),
-      () => {
-        setEditingId(null);
-        showToast("Column updated!", "success");
-      },
+      {
+        successMessage: "Column updated!",
+        onSuccess: () => {
+          setEditingId(null);
+        },
+      }
     );
   }
 
   function handleDelete(columnId: string) {
-    runAction(
-      () => deleteColumn(columnId),
-      () => showToast("Column deleted!", "success"),
-    );
+    run(() => deleteColumn(columnId), {
+      successMessage: "Column deleted!",
+    });
   }
 
   function handleMoveUp(colId: string) {
@@ -117,9 +104,11 @@ export function ColumnManager({ columns, boardId }: ColumnManagerProps) {
     if (index <= 0) return;
     const reordered = [...columns];
     [reordered[index - 1], reordered[index]] = [reordered[index], reordered[index - 1]];
-    runAction(
+    run(
       () => reorderColumns({ boardId, columnIds: reordered.map((c) => c.id) }),
-      () => showToast("Columns reordered!", "success"),
+      {
+        successMessage: "Columns reordered!",
+      }
     );
   }
 
@@ -128,9 +117,11 @@ export function ColumnManager({ columns, boardId }: ColumnManagerProps) {
     if (index < 0 || index >= columns.length - 1) return;
     const reordered = [...columns];
     [reordered[index], reordered[index + 1]] = [reordered[index + 1], reordered[index]];
-    runAction(
+    run(
       () => reorderColumns({ boardId, columnIds: reordered.map((c) => c.id) }),
-      () => showToast("Columns reordered!", "success"),
+      {
+        successMessage: "Columns reordered!",
+      }
     );
   }
 

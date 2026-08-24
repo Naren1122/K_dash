@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -12,10 +13,17 @@ import {
 } from "@/lib/schemas/labelsSchema";
 import { logger } from "@/utils/logger";
 import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/utils/action-utils";
-
-import { notifyAllAdmins } from "@/lib/data/notifications";
+import type { Label } from "@/types/types";
+import { notifyAllAdmins } from "@/actions/notifications";
 
 const actionLogger = logger.action.bind(logger);
+
+export const getBoardLabels = cache(async (): Promise<Label[]> => {
+  return prisma.label.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, color: true },
+  });
+});
 
 export async function getLabels() {
   const user = await getCurrentUser();

@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { auth } from "../../../../auth";
 import { Board } from "@/components/board";
-import { getBoardTasks } from "@/lib/data/tasks";
-import { getAssignees } from "@/lib/data/users";
-import { getBoardLabels } from "@/lib/data/labels";
-import { getBoardColumns } from "@/lib/data/columns";
+import { getBoardTasks } from "@/actions/tasks";
+import { getAssignees } from "@/actions/users";
+import { getBoardLabels } from "@/actions/labels";
+import { getBoardColumns } from "@/actions/columns";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Board | Kanban Task Board",
@@ -37,4 +39,3 @@ export default async function BoardPage() {
     />
   );
 }
-

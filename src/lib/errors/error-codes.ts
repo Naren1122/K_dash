@@ -1,0 +1,24 @@
+export const ErrorCode = {
+  // Authentication & Authorization (401, 403)
+  UNAUTHORIZED: "UNAUTHORIZED",
+  FORBIDDEN: "FORBIDDEN",
+  SESSION_EXPIRED: "SESSION_EXPIRED",
+  INSUFFICIENT_PERMISSIONS: "INSUFFICIENT_PERMISSIONS",
+
+  // Resource / Input Errors (400, 404, 409, 422)
+  BAD_REQUEST: "BAD_REQUEST",
+  NOT_FOUND: "NOT_FOUND",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  CONFLICT: "CONFLICT",
+  ALREADY_EXISTS: "ALREADY_EXISTS",
+
+  // Rate Limiting (429)
+  // RATE_LIMITED: "RATE_LIMITED",
+
+  // Server & Database Errors (500)
+  DATABASE_ERROR: "DATABASE_ERROR",
+  INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
+  UNKNOWN_ERROR: "UNKNOWN_ERROR",
+} as const;
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

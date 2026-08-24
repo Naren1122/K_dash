@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+// Ensure `self` is defined in Node.js/Edge environments if bundled third-party packages access it
+if (typeof (globalThis as unknown as { self: unknown }).self === "undefined") {
+  (globalThis as unknown as { self: unknown }).self = globalThis;
+}
+
 export async function proxy(req: NextRequest) {
   const token = await getToken({
     req,
@@ -18,7 +23,7 @@ export async function proxy(req: NextRequest) {
 
   if (isLoginPage) {
     if (isLoggedIn) {
-      return NextResponse.redirect(new URL("/", baseUrl));
+      return NextResponse.redirect(new URL("/board", baseUrl));
     }
     return NextResponse.next();
   }

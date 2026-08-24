@@ -14,7 +14,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { TaskCard } from "@/components/board/task-card";
 import { DroppableColumn } from "@/components/board/droppable-column";
 import type { BoardColumn } from "@/types/column-types";
@@ -28,6 +28,7 @@ type KanbanViewProps = {
   isAdmin: boolean;
   currentUserId: string;
   isPending: boolean;
+  activeViewersMap?: Record<string, string[]>;
   onStatusChange: (taskId: string, status: TaskStatusValue) => void;
   onAssigneeChange: (taskId: string, assigneeId: string) => void;
   onView: (task: BoardTask) => void;
@@ -42,6 +43,7 @@ export function KanbanView({
   isAdmin,
   currentUserId,
   isPending,
+  activeViewersMap,
   onStatusChange,
   onAssigneeChange,
   onView,
@@ -49,15 +51,6 @@ export function KanbanView({
   onDrop,
 }: KanbanViewProps) {
   const [activeTask, setActiveTask] = useState<BoardTask | null>(null);
-  // Optimistic tasks (for immediate visual feedback during drag)
-  const [optimisticTasks, setOptimisticTasks] = useState<BoardTask[]>(tasks);
-  const [prevTasks, setPrevTasks] = useState<BoardTask[]>(tasks);
-
-  // Sync when tasks prop changes (after server revalidation)
-  if (tasks !== prevTasks) {
-    setPrevTasks(tasks);
-    setOptimisticTasks(tasks);
-  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -66,53 +59,26 @@ export function KanbanView({
   );
 
   function handleDragStart({ active }: DragStartEvent) {
-    const task = optimisticTasks.find((t) => t.id === active.id);
+    const task = tasks.find((t) => t.id === active.id);
     setActiveTask(task ?? null);
-  }
-
-  function handleDragOver({ active, over }: DragOverEvent) {
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    // Find if dragging over a column container or another task
-    const overColumn = columns.find((c) => c.id === overId);
-    const overTask = optimisticTasks.find((t) => t.id === overId);
-    const targetStatus = overColumn?.status ?? overTask?.status;
-
-    if (!targetStatus) return;
-
-    setOptimisticTasks((prev) =>
-      prev.map((t) => (t.id === activeId ? { ...t, status: targetStatus as TaskStatusValue } : t)),
-    );
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     setActiveTask(null);
 
-    if (!over) {
-      // Revert if dropped nowhere
-      setOptimisticTasks(prevTasks);
-      return;
-    }
+    if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
     const overColumn = columns.find((c) => c.id === overId);
-    const overTask = optimisticTasks.find((t) => t.id === overId);
-    const targetStatus: TaskStatusValue | undefined =
-      (overColumn?.status as TaskStatusValue) ?? (overTask?.status as TaskStatusValue);
+    const overTask = tasks.find((t) => t.id === overId);
+    const targetStatus = (overColumn?.status ?? overTask?.status) as TaskStatusValue | undefined;
 
-    const draggedTask = prevTasks.find((t: BoardTask) => t.id === activeId);
-    if (!draggedTask || !targetStatus) {
-      setOptimisticTasks(prevTasks);
-      return;
-    }
+    const draggedTask = tasks.find((t) => t.id === activeId);
+    if (!draggedTask || !targetStatus) return;
 
     if (draggedTask.status !== targetStatus) {
-      // Commit server action; revert optimistic if it fails (handled in board.tsx onDrop)
       onDrop(activeId, targetStatus);
     }
   }
@@ -122,7 +88,6 @@ export function KanbanView({
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <section
@@ -130,7 +95,7 @@ export function KanbanView({
         className="mt-2 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:gap-6"
       >
         {columns.map((column) => {
-          const columnTasks = optimisticTasks.filter((t) => t.status === column.status);
+          const columnTasks = tasks.filter((t) => t.status === column.status);
           return (
             <DroppableColumn
               key={column.id}
@@ -140,6 +105,7 @@ export function KanbanView({
               isAdmin={isAdmin}
               currentUserId={currentUserId}
               isPending={isPending}
+              activeViewersMap={activeViewersMap}
               onStatusChange={onStatusChange}
               onAssigneeChange={onAssigneeChange}
               onView={onView}

@@ -4,6 +4,23 @@ export type Assignee = { id: string; name: string | null; email: string };
 
 export type Label = { id: string; name: string; color: string };
 
+export type CreateActivityLogParams = {
+  taskId: string;
+  userId: string;
+  action: string;
+  field?: string;
+  oldValue?: string;
+  newValue?: string;
+};
+
+export type NotificationPayload = {
+  taskId?: string;
+  taskTitle?: string;
+  actorId?: string;
+  actorName?: string;
+  message?: string;
+};
+
 export type Comment = {
   id: string;
   content: string;

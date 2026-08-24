@@ -9,6 +9,7 @@ import {
   deleteNotificationAction,
 } from "@/actions/notifications";
 import { playNotificationSound } from "@/utils/sound";
+import { useActionRunner } from "@/hooks/useActionRunner";
 
 type NotificationItem = {
   id: string;
@@ -33,6 +34,7 @@ export function NotificationBell() {
   const menuRef = useRef<HTMLDivElement>(null);
   const isFirstLoadRef = useRef(true);
   const lastKnownIdRef = useRef<string | null>(null);
+  const { run } = useActionRunner();
 
   function toggleSound() {
     setSoundEnabled((prev) => {
@@ -138,29 +140,23 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  async function handleMarkRead(id: string) {
+  function handleMarkRead(id: string) {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, readAt: new Date() } : n))
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
-    try {
-      await markReadAction(id);
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
-    }
+    run(() => markReadAction(id));
   }
 
-  async function handleMarkAllRead() {
+  function handleMarkAllRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date() })));
     setUnreadCount(0);
-    try {
-      await markAllReadAction();
-    } catch (err) {
-      console.error("Failed to clear notifications:", err);
-    }
+    run(() => markAllReadAction(), {
+      successMessage: "All notifications marked as read",
+    });
   }
 
-  async function handleDelete(id: string, e?: React.MouseEvent) {
+  function handleDelete(id: string, e?: React.MouseEvent) {
     e?.stopPropagation();
     const target = notifications.find((n) => n.id === id);
     const wasUnread = target && !target.readAt;
@@ -170,11 +166,7 @@ export function NotificationBell() {
       setUnreadCount((prev) => Math.max(0, prev - 1));
     }
 
-    try {
-      await deleteNotificationAction(id);
-    } catch (err) {
-      console.error("Failed to delete notification:", err);
-    }
+    run(() => deleteNotificationAction(id));
   }
 
   function getNotificationIcon(type: string) {
