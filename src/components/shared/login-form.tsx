@@ -37,6 +37,8 @@ export function LoginForm() {
     setError(null);
     loginLogger("login_submit_attempt", { email: data.email });
 
+    const callbackUrl = searchParams.get("callbackUrl") || "/board";
+
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
@@ -51,7 +53,9 @@ export function LoginForm() {
 
     loginLogger("login_success", { email: data.email });
     showToast("Welcome back! Signing you in... 🚀", "success");
-    setTimeout(() => { router.replace("/board"); router.refresh(); }, 600);
+    setTimeout(() => {
+      window.location.href = callbackUrl;
+    }, 300);
   }
 
   return (

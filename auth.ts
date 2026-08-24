@@ -10,6 +10,7 @@ import { logger } from "@/utils/logger";
 const authLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
