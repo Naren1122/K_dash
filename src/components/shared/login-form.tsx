@@ -37,7 +37,8 @@ export function LoginForm() {
     setError(null);
     loginLogger("login_submit_attempt", { email: data.email });
 
-    const callbackUrl = searchParams.get("callbackUrl") || "/board";
+    const rawCallback = searchParams.get("callbackUrl");
+    const callbackUrl = !rawCallback || rawCallback === "/" ? "/board" : rawCallback;
 
     const result = await signIn("credentials", {
       email: data.email,
