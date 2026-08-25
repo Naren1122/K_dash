@@ -232,22 +232,11 @@ export async function deleteAllNotifications(userId: string) {
   });
 }
 
-// In-memory throttle to run the heavy deadline check at most once every 3 minutes per user
-const lastDueCheckMap = new Map<string, number>();
-const DUE_CHECK_INTERVAL_MS = 3 * 60 * 1000;
-
 export async function getNotificationsAction() {
   try {
     const user = await getCurrentUser();
 
-    const now = Date.now();
-    const lastCheck = lastDueCheckMap.get(user.id) || 0;
-    if (now - lastCheck > DUE_CHECK_INTERVAL_MS) {
-      lastDueCheckMap.set(user.id, now);
-      await checkAndCreateDueSoonNotifications(user.id);
-    }
-
-    // Auto-trim to ensure older notifications beyond 10 are deleted automatically
+    // Auto-trim to ensure older notifications beyond 10 are cleaned up
     await trimUserNotifications(user.id);
 
     const notifications = await getUserNotifications(user.id);
