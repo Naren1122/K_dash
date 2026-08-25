@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import type { NotificationType } from "@prisma/client";
-import { getCurrentUser } from "@/utils/action-utils";
+import { getCurrentUser, ActionError } from "@/utils/action-utils";
 import { getAdminUsers } from "@/actions/users";
 import type { NotificationPayload } from "@/types/types";
 
@@ -250,41 +250,37 @@ export async function getNotificationsAction() {
 }
 
 export async function markReadAction(notificationId: string) {
-  try {
-    const user = await getCurrentUser();
-    await markNotificationAsRead(notificationId, user.id);
-    return { success: true };
-  } catch {
-    return { success: false };
+  if (!notificationId || typeof notificationId !== "string") {
+    throw new ActionError(400, "Notification ID is required");
   }
+  const user = await getCurrentUser();
+  const result = await markNotificationAsRead(notificationId, user.id);
+  if (result.count === 0) {
+    throw new ActionError(404, "Notification not found or already read");
+  }
+  return { success: true };
 }
 
 export async function markAllReadAction() {
-  try {
-    const user = await getCurrentUser();
-    await markAllNotificationsAsRead(user.id);
-    return { success: true };
-  } catch {
-    return { success: false };
-  }
+  const user = await getCurrentUser();
+  await markAllNotificationsAsRead(user.id);
+  return { success: true };
 }
 
 export async function deleteNotificationAction(notificationId: string) {
-  try {
-    const user = await getCurrentUser();
-    await deleteNotification(notificationId, user.id);
-    return { success: true };
-  } catch {
-    return { success: false };
+  if (!notificationId || typeof notificationId !== "string") {
+    throw new ActionError(400, "Notification ID is required");
   }
+  const user = await getCurrentUser();
+  const result = await deleteNotification(notificationId, user.id);
+  if (result.count === 0) {
+    throw new ActionError(404, "Notification not found or already deleted");
+  }
+  return { success: true };
 }
 
 export async function deleteAllNotificationsAction() {
-  try {
-    const user = await getCurrentUser();
-    await deleteAllNotifications(user.id);
-    return { success: true };
-  } catch {
-    return { success: false };
-  }
+  const user = await getCurrentUser();
+  await deleteAllNotifications(user.id);
+  return { success: true };
 }

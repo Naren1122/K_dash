@@ -20,19 +20,27 @@ type ActivityLogItem = {
 export function ActivityFeed({ taskId }: { taskId: string }) {
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+
     getActivityLogsAction(taskId)
       .then((res) => {
         if (isMounted && res.logs) {
           setLogs(res.logs);
+          setError(null);
         }
       })
-      .catch((err) => console.error("Failed to load activity logs:", err))
+      .catch((err) => {
+        if (isMounted) {
+          setError(err?.message || "Failed to load activity logs");
+        }
+      })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
+
     return () => {
       isMounted = false;
     };
@@ -42,6 +50,14 @@ export function ActivityFeed({ taskId }: { taskId: string }) {
     return (
       <div className="py-6 text-center text-xs text-slate-400">
         Loading activity...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-6 text-center text-xs text-rose-500 dark:text-rose-400">
+        {error}
       </div>
     );
   }

@@ -1,7 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/utils/action-utils";
+import { getCurrentUser, ActionError } from "@/utils/action-utils";
+import { logger } from "@/utils/logger";
 import type { CreateActivityLogParams } from "@/types/types";
 
 export async function createActivityLog(params: CreateActivityLogParams) {
@@ -17,7 +18,7 @@ export async function createActivityLog(params: CreateActivityLogParams) {
       },
     });
   } catch (error) {
-    console.error("Failed to create activity log:", error);
+    logger.error("activity_log_creation_failed", { error, taskId: params.taskId });
   }
 }
 
@@ -39,6 +40,9 @@ export async function getActivityLogsForTask(taskId: string) {
 }
 
 export async function getActivityLogsAction(taskId: string) {
+  if (!taskId || typeof taskId !== "string") {
+    throw new ActionError(400, "Task ID is required to fetch activity history");
+  }
   await getCurrentUser();
   const logs = await getActivityLogsForTask(taskId);
   return { logs };
