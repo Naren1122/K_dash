@@ -43,12 +43,14 @@ export function useBoardRealtime({
   const onRemoteTaskMovedRef = useRef(onRemoteTaskMoved);
   const onRemoteTaskSavedRef = useRef(onRemoteTaskSaved);
   const onRemoteTaskDeletedRef = useRef(onRemoteTaskDeleted);
+  const activeTaskIdRef = useRef(activeTaskId);
 
   useEffect(() => {
     onRemoteTaskMovedRef.current = onRemoteTaskMoved;
     onRemoteTaskSavedRef.current = onRemoteTaskSaved;
     onRemoteTaskDeletedRef.current = onRemoteTaskDeleted;
-  }, [onRemoteTaskMoved, onRemoteTaskSaved, onRemoteTaskDeleted]);
+    activeTaskIdRef.current = activeTaskId;
+  }, [onRemoteTaskMoved, onRemoteTaskSaved, onRemoteTaskDeleted, activeTaskId]);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -138,7 +140,7 @@ export function useBoardRealtime({
           userName: displayName,
           userEmail: displayEmail,
           role,
-          activeTaskId: activeTaskId ?? null,
+          activeTaskId: activeTaskIdRef.current ?? null,
           onlineAt: new Date().toISOString(),
         });
       } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {

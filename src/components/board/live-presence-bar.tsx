@@ -1,6 +1,5 @@
 "use client";
 
-import { Users, Wifi, WifiOff } from "lucide-react";
 import type { PresenceUser } from "@/types/realtime-types";
 import { getInitials } from "@/utils/initials";
 

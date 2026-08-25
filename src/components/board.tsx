@@ -1,7 +1,6 @@
 "use client";
 
-import { startTransition, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   createTask,
@@ -84,11 +83,6 @@ type BoardProps = {
   userEmail?: string | null;
 };
 
-type OptimisticAction =
-  | { type: "status"; taskId: string; status: TaskStatusValue }
-  | { type: "assignee"; taskId: string; assigneeId: string }
-  | { type: "delete"; taskId: string };
-
 export function Board({
   assignee,
   labels,
@@ -129,8 +123,6 @@ export function Board({
   }
 
   const isAdmin = role === "ADMIN";
-
-  const router = useRouter();
 
   // Realtime hook for multi-user sync and online presence
   const {

@@ -1,6 +1,5 @@
 "use server";
 
-import { cache } from "react";
 import { z } from "zod";
 import { Role } from "@/types/prisma";
 import { revalidatePath } from "next/cache";
@@ -269,7 +268,7 @@ export async function updateTask(input: unknown) {
 
   const patch = pickUpdatableFields(data, user.role === Role.ADMIN);
 
-  const updated = await prisma.task.update({
+  await prisma.task.update({
     where: { id: taskId },
     data: {
       ...patch,
@@ -387,7 +386,7 @@ export async function reassignTask(input: ReassignTaskInput) {
 
   const current = await getTaskOrThrow(taskId);
 
-  const updated = await prisma.task.update({
+  await prisma.task.update({
     where: { id: taskId },
     data: { assigneeId },
     select: { id: true, assigneeId: true },
