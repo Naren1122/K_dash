@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { getSupabaseBrowserClient } from "@/lib/realtime/supabase-realtime";
+import { useNotificationStore } from "@/lib/stores/useNotificationStore";
 import type {
   PresenceUser,
   RealtimeTaskMovedPayload,
@@ -98,6 +99,7 @@ export function useBoardRealtime({
         console.log("📡 [Realtime] Received task:moved:", payload);
         if (payload.actorId !== userId) {
           onRemoteTaskMovedRef.current?.(payload);
+          useNotificationStore.getState().fetchNotifications();
         }
       }
     );
@@ -109,6 +111,7 @@ export function useBoardRealtime({
         console.log("📡 [Realtime] Received task:saved:", payload);
         if (payload.actorId !== userId) {
           onRemoteTaskSavedRef.current?.(payload);
+          useNotificationStore.getState().fetchNotifications();
         }
       }
     );
@@ -120,6 +123,7 @@ export function useBoardRealtime({
         console.log("📡 [Realtime] Received task:deleted:", payload);
         if (payload.actorId !== userId) {
           onRemoteTaskDeletedRef.current?.(payload);
+          useNotificationStore.getState().fetchNotifications();
         }
       }
     );

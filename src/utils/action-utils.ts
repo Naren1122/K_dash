@@ -63,7 +63,7 @@ export async function getCurrentUser() {
     throw new ForbiddenError();
   }
 
-  logger.action("auth_success", { userId: session.user.id, role: session.user.role });
+  logger.debug("auth_success", { userId: session.user.id, role: session.user.role });
   return session.user;
 }
 

@@ -33,7 +33,7 @@ export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps)
   return (
     <div className="space-y-4">
       {/* Title & Action Row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
             Board Workspaces
@@ -45,13 +45,13 @@ export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps)
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
           {presenceNode}
 
           {isAdmin ? (
             <Link
               href="/admin/analytics"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:border-slate-700 dark:hover:text-white"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:border-slate-700 dark:hover:text-white shrink-0 whitespace-nowrap"
             >
               📈 Analytics
             </Link>
@@ -69,7 +69,7 @@ export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps)
                 key={view.id}
                 type="button"
                 onClick={() => setActiveView(view.id)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer ${
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer whitespace-nowrap ${
                   activeView === view.id
                     ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -82,7 +82,7 @@ export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps)
 
           {isAdmin ? (
             <button
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] focus:outline-none cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] focus:outline-none cursor-pointer shrink-0 whitespace-nowrap"
               onClick={toggleCreateForm}
               type="button"
             >

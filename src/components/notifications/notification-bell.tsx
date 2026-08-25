@@ -3,38 +3,35 @@
 import { useEffect, useState, useRef } from "react";
 import { Trash2, Volume2, VolumeX, Clock, MessageSquare, CheckCircle2, UserCheck, Bell } from "lucide-react";
 import {
-  getNotificationsAction,
   markReadAction,
   markAllReadAction,
   deleteNotificationAction,
 } from "@/actions/notifications";
 import { playNotificationSound } from "@/utils/sound";
 import { useActionRunner } from "@/hooks/useActionRunner";
-
-type NotificationItem = {
-  id: string;
-  type: string;
-  payload: Record<string, unknown>;
-  readAt: Date | string | null;
-  createdAt: Date | string;
-};
+import { getSupabaseBrowserClient } from "@/lib/realtime/supabase-realtime";
+import { useNotificationStore } from "@/lib/stores/useNotificationStore";
 
 const SOUND_STORAGE_KEY = "kanban_notification_sound";
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { run } = useActionRunner();
+
+  const notifications = useNotificationStore((state) => state.notifications);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const loading = useNotificationStore((state) => state.loading);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
+  const markAsReadOptimistic = useNotificationStore((state) => state.markAsReadOptimistic);
+  const markAllAsReadOptimistic = useNotificationStore((state) => state.markAllAsReadOptimistic);
+  const deleteNotificationOptimistic = useNotificationStore((state) => state.deleteNotificationOptimistic);
+
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") return true;
     const saved = localStorage.getItem(SOUND_STORAGE_KEY);
     return saved !== null ? saved === "true" : true;
   });
-  const menuRef = useRef<HTMLDivElement>(null);
-  const isFirstLoadRef = useRef(true);
-  const lastKnownIdRef = useRef<string | null>(null);
-  const { run } = useActionRunner();
 
   function toggleSound() {
     setSoundEnabled((prev) => {
@@ -48,55 +45,36 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    let cancelled = false;
     let interval: NodeJS.Timeout | null = null;
 
-    async function load() {
-      try {
-        const data = await getNotificationsAction();
-        if (!cancelled) {
-          const newNotifications = data.notifications as NotificationItem[];
-          const newUnreadCount = data.unreadCount;
-          const newestNotif = newNotifications[0];
+    // 1. Initial Load
+    fetchNotifications();
 
-          // If new notifications arrived after initial load, play sound chime without toaster popup
-          if (
-            !isFirstLoadRef.current &&
-            newestNotif &&
-            newestNotif.id !== lastKnownIdRef.current &&
-            !newestNotif.readAt
-          ) {
-            const savedSound = localStorage.getItem(SOUND_STORAGE_KEY);
-            const isAudioOn = savedSound === null ? true : savedSound === "true";
-            if (isAudioOn) {
-              playNotificationSound();
-            }
+    // 2. Realtime WebSocket listener for instant push updates
+    const supabase = getSupabaseBrowserClient();
+    let channel: ReturnType<NonNullable<typeof supabase>["channel"]> | null = null;
+
+    if (supabase) {
+      channel = supabase.channel("kanban_notifications_bell");
+      channel
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "Notification" },
+          () => {
+            fetchNotifications();
           }
-
-          if (newestNotif) {
-            lastKnownIdRef.current = newestNotif.id;
-          }
-
-          setNotifications(newNotifications);
-          setUnreadCount(newUnreadCount);
-          isFirstLoadRef.current = false;
-        }
-      } catch (err) {
-        console.debug("Notifications polling offline/reconnecting:", err);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+        )
+        .subscribe();
     }
 
+    // 3. Fallback background poll (every 30s)
     function startPolling() {
       if (!interval) {
         interval = setInterval(() => {
           if (document.visibilityState === "visible") {
-            load();
+            fetchNotifications();
           }
-        }, 5000); // Check every 5 seconds for fast live updates
+        }, 30000);
       }
     }
 
@@ -109,26 +87,27 @@ export function NotificationBell() {
 
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
-        load();
+        fetchNotifications();
         startPolling();
       } else {
         stopPolling();
       }
     }
 
-    load();
     startPolling();
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", load);
+    window.addEventListener("focus", fetchNotifications);
 
     return () => {
-      cancelled = true;
       stopPolling();
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", load);
+      window.removeEventListener("focus", fetchNotifications);
     };
-  }, []);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -141,16 +120,12 @@ export function NotificationBell() {
   }, []);
 
   function handleMarkRead(id: string) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, readAt: new Date() } : n))
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+    markAsReadOptimistic(id);
     run(() => markReadAction(id));
   }
 
   function handleMarkAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date() })));
-    setUnreadCount(0);
+    markAllAsReadOptimistic();
     run(() => markAllReadAction(), {
       successMessage: "All notifications marked as read",
     });
@@ -158,14 +133,7 @@ export function NotificationBell() {
 
   function handleDelete(id: string, e?: React.MouseEvent) {
     e?.stopPropagation();
-    const target = notifications.find((n) => n.id === id);
-    const wasUnread = target && !target.readAt;
-
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    if (wasUnread) {
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    }
-
+    deleteNotificationOptimistic(id);
     run(() => deleteNotificationAction(id));
   }
 
@@ -203,89 +171,88 @@ export function NotificationBell() {
 
       {isOpen ? (
         <div className="absolute right-0 mt-2 w-84 z-50 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+          <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <Bell className="h-3.5 w-3.5 text-slate-700 dark:text-slate-200" />
-                <span>Notifications</span>
-              </h3>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Notifications
+              </span>
+              {unreadCount > 0 ? (
+                <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
+                  {unreadCount} new
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={toggleSound}
-                title={soundEnabled ? "Mute notification sound" : "Enable notification sound"}
-                className="flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition cursor-pointer p-0.5 rounded"
+                title={soundEnabled ? "Mute notification sound" : "Unmute notification sound"}
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
               >
                 {soundEnabled ? (
-                  <Volume2 className="h-3.5 w-3.5 text-sky-500" />
+                  <Volume2 className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
                   <VolumeX className="h-3.5 w-3.5 text-slate-400" />
                 )}
               </button>
+
+              {unreadCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  className="text-[11px] font-medium text-sky-600 hover:underline dark:text-sky-400 cursor-pointer"
+                >
+                  Mark all read
+                </button>
+              ) : null}
             </div>
-            {notifications.length > 0 ? (
-              <button
-                type="button"
-                onClick={handleMarkAllRead}
-                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer"
-              >
-                Mark all as read
-              </button>
-            ) : null}
           </div>
 
-          <div className="mt-2 max-h-80 space-y-1.5 overflow-y-auto">
-            {loading ? (
-              <p className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">Loading...</p>
+          <div className="max-h-72 overflow-y-auto space-y-1.5 pr-0.5">
+            {loading && notifications.length === 0 ? (
+              <div className="py-6 text-center text-xs text-slate-400">
+                Loading notifications...
+              </div>
             ) : notifications.length === 0 ? (
-              <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">No notifications</p>
+              <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+                No notifications yet
+              </div>
             ) : (
-              notifications.map((n) => {
-                const isUnread = !n.readAt;
-                const isDueSoon = n.type === "TASK_DUE_SOON";
-                const timeStr = new Date(n.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
+              notifications.map((item) => {
+                const message = (item.payload?.message as string) || "Task updated";
+                const isUnread = !item.readAt;
 
                 return (
                   <div
-                    key={n.id}
-                    onClick={() => isUnread && handleMarkRead(n.id)}
-                    className={`group relative flex items-start gap-2.5 rounded-xl p-2.5 transition-colors cursor-pointer ${
+                    key={item.id}
+                    onClick={() => isUnread && handleMarkRead(item.id)}
+                    className={`group relative flex items-start gap-2.5 rounded-xl p-2 text-xs transition cursor-pointer ${
                       isUnread
-                        ? isDueSoon
-                          ? "bg-amber-50/80 border border-amber-200/90 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:border-amber-800/60 dark:hover:bg-amber-950/60"
-                          : "bg-indigo-50/70 border border-indigo-200/80 hover:bg-indigo-100/70 dark:bg-indigo-950/40 dark:border-indigo-800/60 dark:hover:bg-indigo-950/60"
-                        : "border border-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/70"
+                        ? "bg-sky-50/60 text-slate-900 dark:bg-sky-950/20 dark:text-slate-100 font-medium"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60"
                     }`}
                   >
-                    <div className="mt-0.5">{getNotificationIcon(n.type)}</div>
+                    <div className="mt-0.5">{getNotificationIcon(item.type)}</div>
 
-                    <div className="min-w-0 flex-1 pr-2">
-                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-snug">
-                        {String(n.payload?.message || n.payload?.taskTitle || "Notification")}
-                      </p>
-                      <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1">{timeStr}</p>
+                    <div className="flex-1 min-w-0 pr-6">
+                      <p className="leading-snug break-words text-[11px]">{message}</p>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">
+                        {new Date(item.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                      {isUnread ? (
-                        <span
-                          className={`h-2 w-2 rounded-full shrink-0 ${
-                            isDueSoon ? "bg-amber-500" : "bg-indigo-500"
-                          }`}
-                        />
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={(e) => handleDelete(n.id, e)}
-                        title="Delete notification"
-                        aria-label="Delete notification"
-                        className="opacity-60 hover:opacity-100 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition p-0.5 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-700/60 cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      aria-label="Delete notification"
+                      onClick={(e) => handleDelete(item.id, e)}
+                      className="absolute right-1.5 top-2 opacity-0 group-hover:opacity-100 rounded-md p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 );
               })

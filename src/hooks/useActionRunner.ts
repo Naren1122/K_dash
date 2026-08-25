@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useToast } from "@/components/providers/toast-provider";
+import { useNotificationStore } from "@/lib/stores/useNotificationStore";
 import type { ActionResult } from "@/lib/error_actions/action-types";
 import { formatErrorMessage } from "@/lib/errors/formatters";
 
@@ -66,6 +67,7 @@ export function useActionRunner() {
             if (options?.successMessage) {
               showToast(options.successMessage, "success");
             }
+            useNotificationStore.getState().fetchNotifications();
             options?.onSuccess?.(result.data);
             return;
           }
@@ -74,6 +76,7 @@ export function useActionRunner() {
           if (options?.successMessage) {
             showToast(options.successMessage, "success");
           }
+          useNotificationStore.getState().fetchNotifications();
           options?.onSuccess?.(result as T);
         } catch (caughtError) {
           const message = options?.errorMessage || parseActionErrorMessage(caughtError);
