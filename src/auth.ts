@@ -90,10 +90,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = (token.id as string) || (token.sub as string);
         session.user.role = token.role as Role;
 
+        // If email is present, sync current DB ID and role to avoid stale JWT state after DB resets/seeds
+        if (session.user.email) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { email: session.user.email },
+              select: { id: true, role: true },
+            });
+            if (dbUser) {
+              session.user.id = dbUser.id;
+              session.user.role = dbUser.role as Role;
+            }
+          } catch {
+            // Keep fallback token values if DB query is temporarily unavailable
+          }
+        }
+
         logger.debug("AUTH: session_resolved", { userId: session.user.id, role: session.user.role });
       }
       return session;
     },
+
   },
   events: {
     async signIn({ user, isNewUser }) {

@@ -53,19 +53,48 @@ export function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown): T {
 export async function getCurrentUser() {
   const session = await auth();
 
-  if (!session?.user?.id) {
+  if (!session?.user?.id && !session?.user?.email) {
     logger.action("auth_failed", { reason: "no_session" });
     throw new UnauthorizedError();
   }
 
-  if (session.user.role !== Role.ADMIN && session.user.role !== Role.MEMBER) {
-    logger.action("auth_failed", { reason: "invalid_role", role: session.user.role });
+  // 1. Look up user by session ID
+  let user = session.user.id
+    ? await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, email: true, name: true, role: true },
+    })
+    : null;
+
+  // 2. Self-healing fallback: If not found by ID (e.g. database was reset or re-seeded), look up by email
+  if (!user && session.user.email) {
+    user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, email: true, name: true, role: true },
+    });
+  }
+
+  if (!user) {
+    logger.action("auth_failed", {
+      reason: "user_not_found_in_db",
+      userId: session?.user?.id,
+      email: session?.user?.email,
+    });
+    throw new UnauthorizedError(
+      "Your session is associated with an account that no longer exists. Please sign in again."
+    );
+  }
+
+  if (user.role !== Role.ADMIN && user.role !== Role.MEMBER) {
+    logger.action("auth_failed", { reason: "invalid_role", role: user.role });
     throw new ForbiddenError();
   }
 
-  logger.debug("auth_success", { userId: session.user.id, role: session.user.role });
-  return session.user;
+  logger.debug("auth_success", { userId: user.id, role: user.role });
+  return user;
 }
+
+
 
 export async function requireAdmin() {
   const user = await getCurrentUser();
