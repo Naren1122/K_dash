@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils/initials";
 import { EmojiPickerPopover } from "@/components/chat/emoji-picker-popover";
@@ -47,6 +48,7 @@ export function ChatMessageItemView({
   onToggleReaction,
   onDeleteMessage,
 }: ChatMessageItemProps) {
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const isSelf = message.userId === currentUserId;
   const canDelete = isSelf || isAdmin;
   const authorName = message.author.name || message.author.email?.split("@")[0] || "User";
@@ -57,7 +59,7 @@ export function ChatMessageItemView({
     <div
       className={`group relative flex items-start gap-2.5 rounded-2xl p-2.5 transition hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${
         isSelf ? "bg-indigo-50/30 dark:bg-indigo-950/20" : ""
-      }`}
+      } ${isEmojiPickerOpen ? "z-30 bg-slate-50/90 dark:bg-slate-800/60" : "z-0"}`}
     >
       {/* User Avatar */}
       <div
@@ -109,7 +111,7 @@ export function ChatMessageItemView({
                   type="button"
                   onClick={() => onToggleReaction(message.id, reaction.emoji)}
                   title={`${tooltip} reacted with ${reaction.emoji}`}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition cursor-pointer ${
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition cursor-pointer border-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 ${
                     hasReacted
                       ? "bg-indigo-100 text-indigo-800 ring-1 ring-indigo-400 dark:bg-indigo-950 dark:text-indigo-300 dark:ring-indigo-700"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
@@ -125,11 +127,20 @@ export function ChatMessageItemView({
       </div>
 
       {/* Hover Floating Actions Menu */}
-      <div className="absolute right-2 top-2 hidden items-center gap-0.5 rounded-xl border border-slate-200 bg-white/95 px-1 py-0.5 shadow-sm backdrop-blur-sm group-hover:flex dark:border-slate-700 dark:bg-slate-800/95 z-10">
+      <div
+        className={`absolute right-2 top-2 items-center gap-0.5 rounded-xl border border-slate-200/90 bg-white/95 px-1 py-0.5 shadow-sm backdrop-blur-sm dark:border-slate-700/90 dark:bg-slate-800/95 z-30 ${
+          isEmojiPickerOpen ? "flex" : "hidden group-hover:flex"
+        }`}
+      >
         <EmojiPickerPopover
           align="right"
+          onOpenChange={setIsEmojiPickerOpen}
           onSelectEmoji={(emoji) => onToggleReaction(message.id, emoji)}
-          buttonClassName="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+          buttonClassName={`rounded-lg p-1 transition cursor-pointer border-0 outline-none ring-0 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 active:bg-slate-100 dark:active:bg-slate-700 ${
+            isEmojiPickerOpen
+              ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+              : "text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+          }`}
         />
 
         {canDelete && (
@@ -138,7 +149,7 @@ export function ChatMessageItemView({
             onClick={() => onDeleteMessage(message.id)}
             title="Delete message"
             aria-label="Delete message"
-            className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition cursor-pointer"
+            className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition cursor-pointer border-0 outline-none ring-0 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-rose-200 dark:focus:ring-rose-900 active:bg-rose-50 dark:active:bg-rose-950/40"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>

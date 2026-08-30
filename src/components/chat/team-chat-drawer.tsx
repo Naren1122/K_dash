@@ -173,9 +173,8 @@ export function TeamChatDrawer({
           <div className="relative flex items-center justify-center">
             <MessageSquare className="h-4.5 w-4.5" />
             <span
-              className={`absolute -top-1 -right-1 h-2 w-2 rounded-full ring-2 ring-indigo-600 ${
-                isConnected ? "bg-emerald-400" : "bg-amber-400"
-              }`}
+              className={`absolute -top-1 -right-1 h-2 w-2 rounded-full ring-2 ring-indigo-600 ${isConnected ? "bg-emerald-400" : "bg-amber-400"
+                }`}
             />
           </div>
 
@@ -275,11 +274,10 @@ export function TeamChatDrawer({
               <button
                 type="button"
                 onClick={selectGroupChat}
-                className={`w-full flex items-center justify-between gap-3 rounded-2xl p-2.5 text-left transition cursor-pointer ${
-                  !activeRecipientId
-                    ? "bg-indigo-50/80 border border-indigo-200/80 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-200"
-                    : "hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300"
-                }`}
+                className={`w-full flex items-center justify-between gap-3 rounded-2xl p-2.5 text-left transition cursor-pointer ${!activeRecipientId
+                  ? "bg-indigo-50/80 border border-indigo-200/80 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-200"
+                  : "hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300"
+                  }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
@@ -322,11 +320,10 @@ export function TeamChatDrawer({
                           key={conv.user.id}
                           type="button"
                           onClick={() => selectDirectUser(conv.user.id)}
-                          className={`w-full flex items-center justify-between gap-3 rounded-2xl p-2.5 text-left transition cursor-pointer ${
-                            isSelected
-                              ? "bg-indigo-50/80 border border-indigo-200/80 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-200"
-                              : "hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300"
-                          }`}
+                          className={`w-full flex items-center justify-between gap-3 rounded-2xl p-2.5 text-left transition cursor-pointer ${isSelected
+                            ? "bg-indigo-50/80 border border-indigo-200/80 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-200"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300"
+                            }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div
@@ -452,8 +449,9 @@ export function TeamChatDrawer({
                 <div className="flex items-end gap-1.5 rounded-2xl border border-slate-200 bg-slate-50/90 p-1.5 focus-within:border-indigo-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 dark:border-slate-800 dark:bg-slate-800/80 dark:focus-within:border-indigo-500 dark:focus-within:bg-slate-800">
                   <EmojiPickerPopover
                     align="left"
+                    variant="full"
                     onSelectEmoji={handleAddEmojiToInput}
-                    buttonClassName="rounded-xl p-1.5 text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition cursor-pointer"
+                    buttonClassName="rounded-xl p-1.5 text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition cursor-pointer border-0 outline-none ring-0 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 active:bg-slate-200/80"
                   />
 
                   <textarea
