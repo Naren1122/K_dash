@@ -131,7 +131,7 @@ export function LoginForm() {
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 dark:border-slate-800 dark:bg-slate-800/80 dark:text-white dark:focus:border-sky-400 dark:focus:ring-sky-950/60"
                   id="email"
                   type="email"
-                  placeholder="name@company.com"
+                  placeholder="admin@kanban.local"
                   {...register("email")}
                 />
                 {errors.email ? <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.email.message}</p> : null}
@@ -146,7 +146,7 @@ export function LoginForm() {
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 dark:border-slate-800 dark:bg-slate-800/80 dark:text-white dark:focus:border-sky-400 dark:focus:ring-sky-950/60"
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Admin123!"
                   {...register("password")}
                 />
                 {errors.password ? <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.password.message}</p> : null}
