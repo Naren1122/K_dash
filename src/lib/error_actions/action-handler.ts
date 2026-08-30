@@ -6,7 +6,7 @@ import {
   formatZodIssues,
   handleDatabaseError,
 } from "@/lib/errors";
-import { logger } from "@/utils/logger";
+import { logger } from "@/lib/utils/logger";
 import type { ActionFailure, ActionResult } from "./action-types";
 
 /**
@@ -69,7 +69,7 @@ export function handleActionError(error: unknown, actionName = "unnamed_action")
   if (error instanceof Error) {
     const isActionError = "status" in error && typeof (error as { status: unknown }).status === "number";
     const status = isActionError ? ((error as { status: number }).status) : 500;
-    
+
     logger.action(`${actionName}_error`, {
       name: error.name,
       message: error.message,

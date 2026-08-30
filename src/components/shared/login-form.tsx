@@ -8,7 +8,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/providers/toast-provider";
 import { loginSchema, LoginInput } from "@/lib/schemas/loginSchema";
-import { logger } from "@/utils/logger";
+import { logger } from "@/lib/utils/logger";
 
 const loginLogger = (...args: Parameters<typeof logger.auth>) => logger.auth(...args);
 

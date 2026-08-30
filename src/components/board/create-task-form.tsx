@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { LabelPicker } from "@/components/labels/label-picker";
 import { PRIORITY_OPTIONS } from "@/components/board/priority-badge";
-import type { Assignee, Label } from "@/types/types";
+import { MagicTaskInput } from "@/components/ai/magic-task-input";
+import type { Assignee, Label } from "@/lib/types/types";
+import type { MagicTaskResponse } from "@/lib/schemas/aiSchema";
 
 type CreateTaskFormProps = {
   assignee: Assignee[];
@@ -56,6 +58,15 @@ export function CreateTaskForm({
     setValue("labelIds", next);
   }
 
+  function handleAiPopulate(aiData: MagicTaskResponse) {
+    if (aiData.title) setValue("title", aiData.title, { shouldValidate: true });
+    if (aiData.description !== undefined) setValue("description", aiData.description ?? "", { shouldValidate: true });
+    if (aiData.assigneeId !== undefined) setValue("assigneeId", aiData.assigneeId ?? "", { shouldValidate: true });
+    if (aiData.priority) setValue("priority", aiData.priority, { shouldValidate: true });
+    if (aiData.dueDate !== undefined) setValue("dueDate", aiData.dueDate ?? "", { shouldValidate: true });
+    if (aiData.labelIds && aiData.labelIds.length > 0) setValue("labelIds", aiData.labelIds, { shouldValidate: true });
+  }
+
   function submit(data: CreateTaskInput) {
     onSubmit(data);
     reset({
@@ -84,6 +95,12 @@ export function CreateTaskForm({
           Keep it clear, concise, and assign it to a team member when ready.
         </p>
       </div>
+
+      <MagicTaskInput
+        assignees={assignee}
+        labels={labels}
+        onPopulate={handleAiPopulate}
+      />
 
       <div>
         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">

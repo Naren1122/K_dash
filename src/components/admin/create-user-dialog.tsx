@@ -10,7 +10,7 @@ import {
   CreateUserFormValues,
   CreateUserInput,
 } from "@/lib/schemas/usersSchema";
-import { createUser } from "@/actions/users";
+import { createUser } from "@/lib/actions/users";
 import { Input } from "@/components/ui/input";
 import { useActionRunner } from "@/hooks/useActionRunner";
 import { useToast } from "@/components/providers/toast-provider";
@@ -91,18 +91,16 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs transition-all duration-300 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs transition-all duration-300 ${visible ? "opacity-100" : "opacity-0"
+        }`}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-user-title"
     >
       <div
-        className={`w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
-          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
-        }`}
+        className={`w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+          }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">

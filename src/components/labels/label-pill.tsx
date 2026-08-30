@@ -1,4 +1,4 @@
-import type { Label } from "@/types/types";
+import type { Label } from "@/lib/types/types";
 
 export function LabelPill({ label }: { label: Label }) {
   return (

@@ -6,8 +6,8 @@ import {
   markReadAction,
   markAllReadAction,
   deleteNotificationAction,
-} from "@/actions/notifications";
-import { playNotificationSound } from "@/utils/sound";
+} from "@/lib/actions/notifications";
+import { playNotificationSound } from "@/lib/utils/sound";
 import { useActionRunner } from "@/hooks/useActionRunner";
 import { getSupabaseBrowserClient } from "@/lib/realtime/supabase-realtime";
 import { useNotificationStore } from "@/lib/stores/useNotificationStore";
@@ -64,6 +64,9 @@ export function NotificationBell() {
             fetchNotifications();
           }
         )
+        .on("broadcast", { event: "notifications:push" }, () => {
+          fetchNotifications();
+        })
         .subscribe();
     }
 
@@ -227,11 +230,10 @@ export function NotificationBell() {
                   <div
                     key={item.id}
                     onClick={() => isUnread && handleMarkRead(item.id)}
-                    className={`group relative flex items-start gap-2.5 rounded-xl p-2 text-xs transition cursor-pointer ${
-                      isUnread
-                        ? "bg-sky-50/60 text-slate-900 dark:bg-sky-950/20 dark:text-slate-100 font-medium"
-                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60"
-                    }`}
+                    className={`group relative flex items-start gap-2.5 rounded-xl p-2 text-xs transition cursor-pointer ${isUnread
+                      ? "bg-sky-50/60 text-slate-900 dark:bg-sky-950/20 dark:text-slate-100 font-medium"
+                      : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/60"
+                      }`}
                   >
                     <div className="mt-0.5">{getNotificationIcon(item.type)}</div>
 

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { Label } from "@/types/types";
-import type { DueDateFilterOption, SortOption } from "@/utils/taskFilterSort";
+import type { Label } from "@/lib/types/types";
+import type { DueDateFilterOption, SortOption } from "@/lib/utils/taskFilterSort";
 import { useBoardFilterStore, useBoardModalStore } from "@/lib/stores";
 
 type BoardHeaderProps = {
@@ -69,11 +69,10 @@ export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps)
                 key={view.id}
                 type="button"
                 onClick={() => setActiveView(view.id)}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer whitespace-nowrap ${
-                  activeView === view.id
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer whitespace-nowrap ${activeView === view.id
+                  ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  }`}
               >
                 {view.icon} {view.label}
               </button>
@@ -103,11 +102,10 @@ export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps)
             <button
               type="button"
               onClick={() => setShowLabelDropdown((prev) => !prev)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition cursor-pointer shadow-xs ${
-                selectedLabelIds.length > 0
-                  ? "border-indigo-300 bg-indigo-50 text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
-                  : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 dark:hover:border-slate-600"
-              }`}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition cursor-pointer shadow-xs ${selectedLabelIds.length > 0
+                ? "border-indigo-300 bg-indigo-50 text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+                : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 dark:hover:border-slate-600"
+                }`}
             >
               🏷️ Labels {selectedLabelIds.length > 0 ? `(${selectedLabelIds.length})` : ""}
               <span className="text-[10px]">▼</span>

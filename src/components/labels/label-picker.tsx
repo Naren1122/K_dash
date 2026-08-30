@@ -1,6 +1,6 @@
 "use client";
 
-import type { Label } from "@/types/types";
+import type { Label } from "@/lib/types/types";
 
 type LabelPickerProps = {
   labels: Label[];
@@ -25,11 +25,10 @@ export function LabelPicker({ labels, selected, onToggle }: LabelPickerProps) {
           <button
             key={label.id}
             aria-pressed={isSelected}
-            className={`rounded-full border px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${
-              isSelected
+            className={`rounded-full border px-2.5 py-1 text-[11px] font-bold transition cursor-pointer ${isSelected
                 ? "border-transparent text-white shadow-sm"
                 : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-            }`}
+              }`}
             onClick={() => onToggle(label.id)}
             style={isSelected ? { backgroundColor: label.color } : undefined}
             type="button"

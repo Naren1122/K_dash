@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { BoardTask, Assignee, Label } from "@/types/types";
+import type { BoardTask, Assignee, Label } from "@/lib/types/types";
 import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 import { PriorityBadge } from "@/components/board/priority-badge";
 import { DueDateBadge } from "@/components/board/due-date-badge";
 import { LabelPill } from "@/components/labels/label-pill";
-import { getInitials } from "@/utils/initials";
+import { getInitials } from "@/lib/utils/initials";
 
 type SortField = "title" | "status" | "priority" | "dueDate" | "assignee" | "createdAt";
 type SortDir = "asc" | "desc";

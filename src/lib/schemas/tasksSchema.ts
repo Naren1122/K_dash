@@ -16,7 +16,7 @@ function optionalNullableDateField() {
     .transform((value) => (value == null || value === "" ? null : new Date(value)))
     .superRefine((date, ctx) => {
       if (date === null) return;
-      
+
       if (isNaN(date.getTime())) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -37,7 +37,7 @@ function optionalNullableDateField() {
       // Check if date is in the past (before today's local date at 00:00:00)
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      
+
       // Determine input date at 00:00:00 in UTC & local to be timezone resilient
       const inputUtc = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).getTime();
       const inputLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -51,7 +51,8 @@ function optionalNullableDateField() {
     });
 }
 
-import { Priority, TaskStatus } from "@prisma/client";
+import { Priority, TaskStatus } from "@/lib/types/prisma_type";
+
 
 export const priorities = Object.values(Priority) as [Priority, ...Priority[]];
 export type PriorityValue = Priority;

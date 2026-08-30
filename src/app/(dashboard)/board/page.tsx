@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { auth } from "../../../../auth";
+import { auth } from "@/auth";
 import { Board } from "@/components/board";
-import { getBoardTasks } from "@/actions/tasks";
-import { getAssignees } from "@/actions/users";
-import { getBoardLabels } from "@/actions/labels";
-import { getBoardColumns } from "@/actions/columns";
+import { getBoardTasks } from "@/lib/actions/tasks";
+import { getAssignees } from "@/lib/actions/users";
+import { getBoardLabels } from "@/lib/actions/labels";
+import { getBoardColumns } from "@/lib/actions/columns";
 
 export const dynamic = "force-dynamic";
 

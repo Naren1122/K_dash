@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { Role, TaskStatus, type Prisma } from "@/types/prisma";
+import { prisma } from "@/lib/utils/prisma";
+import { Role, TaskStatus, type Prisma } from "@/lib/types/prisma_type";
 import { StatCards } from "@/components/admin/stat-cards";
 import { UserTable } from "@/components/admin/user-table";
 import { LabelManager } from "@/components/labels/label-manager";

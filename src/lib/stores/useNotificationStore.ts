@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { getNotificationsAction } from "@/actions/notifications";
-import { playNotificationSound } from "@/utils/sound";
+import { getNotificationsAction } from "@/lib/actions/notifications";
+import { playNotificationSound } from "@/lib/utils/sound";
 
 export type NotificationItem = {
   id: string;

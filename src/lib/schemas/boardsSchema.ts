@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { taskStatusSchema } from "./tasksSchema";
+
 
 
 export const createBoardSchema = z.object({
@@ -32,30 +32,14 @@ export type UpdateBoardInput = z.infer<typeof updateBoardSchema>;
 
 export const boardIdSchema = z.string().min(1, "Board ID is required");
 
-export const createColumnSchema = z.object({
-  boardId: z.string().min(1, "Board ID is required"),
-  name: z.string().trim().min(1, "Column name is required").max(50),
-  status: taskStatusSchema,
+// Re-export column schemas from canonical source of truth
+export {
+  createColumnSchema,
+  type CreateColumnInput,
+  updateColumnSchema,
+  type UpdateColumnInput,
+  columnIdSchema,
+  reorderColumnsSchema,
+  type ReorderColumnsInput,
+} from "./columnSchema";
 
-  position: z.number().int().nonnegative().optional(),
-});
-
-export type CreateColumnInput = z.infer<typeof createColumnSchema>;
-
-export const updateColumnSchema = z.object({
-  columnId: z.string().min(1, "Column ID is required"),
-  name: z.string().trim().min(1).max(50).optional(),
-  position: z.number().int().nonnegative().optional(),
-  wipLimit: z.number().int().positive().nullable().optional(),
-});
-
-export type UpdateColumnInput = z.infer<typeof updateColumnSchema>;
-
-export const columnIdSchema = z.string().min(1, "Column ID is required");
-
-export const reorderColumnsSchema = z.object({
-  boardId: z.string().min(1, "Board ID is required"),
-  columnIds: z.array(z.string().min(1)).min(1, "At least one column ID required"),
-});
-
-export type ReorderColumnsInput = z.infer<typeof reorderColumnsSchema>;

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { DueDateFilterOption, SortOption } from "@/utils/taskFilterSort";
+import type { DueDateFilterOption, SortOption } from "@/lib/utils/taskFilterSort";
 
 export type ActiveBoardView = "kanban" | "list" | "calendar" | "timeline";
 

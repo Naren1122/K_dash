@@ -1,7 +1,7 @@
 "use client";
 
-import type { PresenceUser } from "@/types/realtime-types";
-import { getInitials } from "@/utils/initials";
+import type { PresenceUser } from "@/lib/types/realtime-types";
+import { getInitials } from "@/lib/utils/initials";
 
 type LivePresenceBarProps = {
   onlineUsers: PresenceUser[];

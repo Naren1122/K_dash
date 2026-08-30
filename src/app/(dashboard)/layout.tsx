@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "../../../auth";
+import { auth } from "@/auth";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function DashboardLayout({

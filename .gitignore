@@ -66,3 +66,4 @@ internship_report.pdf
 vercel_issue.md
 vercel error.csv
 *-log-export-*.json
+/src/generated/prisma

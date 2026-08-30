@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { BoardTask } from "@/types/types";
+import type { BoardTask } from "@/lib/types/types";
 import { PriorityBadge } from "@/components/board/priority-badge";
-import { getDueDateStatus } from "@/utils/dueDate";
+import { getDueDateStatus } from "@/lib/utils/dueDate";
 
 type CalendarViewProps = {
   tasks: BoardTask[];
@@ -112,15 +112,13 @@ export function CalendarView({ tasks, onViewTask }: CalendarViewProps) {
           return (
             <div
               key={date.toISOString()}
-              className={`min-h-16 sm:min-h-20 bg-white/95 dark:bg-slate-900/95 p-1.5 transition ${
-                isToday ? "ring-2 ring-inset ring-sky-500 bg-sky-50/30 dark:bg-sky-950/30" : ""
-              }`}
+              className={`min-h-16 sm:min-h-20 bg-white/95 dark:bg-slate-900/95 p-1.5 transition ${isToday ? "ring-2 ring-inset ring-sky-500 bg-sky-50/30 dark:bg-sky-950/30" : ""
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span
-                  className={`flex h-5.5 w-5.5 items-center justify-center rounded-full text-[11px] font-bold ${
-                    isToday ? "bg-gradient-to-br from-sky-400 to-indigo-600 text-white shadow-xs" : "text-slate-700 dark:text-slate-200"
-                  }`}
+                  className={`flex h-5.5 w-5.5 items-center justify-center rounded-full text-[11px] font-bold ${isToday ? "bg-gradient-to-br from-sky-400 to-indigo-600 text-white shadow-xs" : "text-slate-700 dark:text-slate-200"
+                    }`}
                 >
                   {date.getDate()}
                 </span>
@@ -141,11 +139,10 @@ export function CalendarView({ tasks, onViewTask }: CalendarViewProps) {
                       key={task.id}
                       type="button"
                       onClick={() => onViewTask(task)}
-                      className={`w-full text-left truncate rounded-lg p-1.5 text-[11px] font-semibold shadow-2xs transition hover:scale-[1.02] cursor-pointer ${
-                        isOverdue
-                          ? "bg-rose-50 text-rose-900 border border-rose-200 hover:border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-                          : "bg-slate-50/90 text-slate-800 border border-slate-200 hover:bg-sky-50 hover:border-sky-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-750 dark:hover:border-slate-600"
-                      }`}
+                      className={`w-full text-left truncate rounded-lg p-1.5 text-[11px] font-semibold shadow-2xs transition hover:scale-[1.02] cursor-pointer ${isOverdue
+                        ? "bg-rose-50 text-rose-900 border border-rose-200 hover:border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
+                        : "bg-slate-50/90 text-slate-800 border border-slate-200 hover:bg-sky-50 hover:border-sky-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-750 dark:hover:border-slate-600"
+                        }`}
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="truncate text-[10px] font-bold">{task.title}</span>

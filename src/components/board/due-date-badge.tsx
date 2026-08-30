@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { dueDateInfo } from "@/types/types";
+import { dueDateInfo } from "@/lib/types/types";
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function formatDate(iso: string): string {
   const d = new Date(iso);

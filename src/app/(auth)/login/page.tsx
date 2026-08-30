@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { auth } from "../../../../auth";
+import { auth } from "@/auth";
 import { LoginForm } from "@/components/shared/login-form";
 
 export const metadata = {

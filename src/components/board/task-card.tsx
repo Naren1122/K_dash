@@ -3,9 +3,9 @@
 import { PriorityBadge } from "@/components/board/priority-badge";
 import { DueDateBadge } from "@/components/board/due-date-badge";
 import { LabelPill } from "@/components/labels/label-pill";
-import { columns, statusLabels, type Assignee, type BoardTask } from "@/types/types";
+import { columns, statusLabels, type Assignee, type BoardTask } from "@/lib/types/types";
 import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
-import { getInitials } from "@/utils/initials";
+import { getInitials } from "@/lib/utils/initials";
 
 type TaskCardProps = {
   task: BoardTask;
@@ -35,11 +35,10 @@ export function TaskCard({
   const canUpdateStatus = isAdmin || task.assignee?.id === currentUserId;
 
   return (
-    <article className={`group rounded-2xl border bg-white p-4 shadow-xs transition dark:bg-slate-900 ${
-      activeViewers && activeViewers.length > 0
-        ? "border-indigo-400 ring-2 ring-indigo-400/20 dark:border-indigo-600 dark:ring-indigo-600/20"
-        : "border-slate-200 hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:hover:border-slate-700"
-    }`}>
+    <article className={`group rounded-2xl border bg-white p-4 shadow-xs transition dark:bg-slate-900 ${activeViewers && activeViewers.length > 0
+      ? "border-indigo-400 ring-2 ring-indigo-400/20 dark:border-indigo-600 dark:ring-indigo-600/20"
+      : "border-slate-200 hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:hover:border-slate-700"
+      }`}>
       {activeViewers && activeViewers.length > 0 && (
         <div className="mb-2.5 flex items-center gap-1.5 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80">
           <span className="relative flex h-2 w-2">

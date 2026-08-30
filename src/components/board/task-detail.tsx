@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Sparkles } from "lucide-react";
 
 import { createTaskSchema, CreateTaskFormValues, CreateTaskInput } from "@/lib/schemas/tasksSchema";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,8 @@ import { LabelPill } from "@/components/labels/label-pill";
 import { LabelPicker } from "@/components/labels/label-picker";
 import { ActivityFeed } from "@/components/board/activity-feed";
 import { TaskComments } from "@/components/comments/task-comments";
-import { toDateInputValue, type Assignee, type BoardTask, type Label } from "@/types/types";
+import { TaskDecomposerModal } from "@/components/ai/task-decomposer-modal";
+import { toDateInputValue, type Assignee, type BoardTask, type Label } from "@/lib/types/types";
 
 type TaskDetailProps = {
   task: BoardTask;
@@ -46,6 +48,7 @@ export function TaskDetail({
   onClose,
 }: TaskDetailProps) {
   const [visible, setVisible] = useState(false);
+  const [isDecomposerOpen, setIsDecomposerOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const isAdmin = role === "ADMIN";
   const canEdit = isAdmin || task.assignee?.id === userId;
@@ -110,20 +113,27 @@ export function TaskDetail({
     }
   }
 
+  function handleInsertDecomposedChecklist(checklist: string) {
+    const currentDesc = control._formValues.description ?? "";
+    const updatedDesc =
+      currentDesc && currentDesc.trim().length > 0
+        ? `${currentDesc.trim()}\n\n### Implementation Checklist\n${checklist}`
+        : `### Implementation Checklist\n${checklist}`;
+    setValue("description", updatedDesc, { shouldValidate: true });
+  }
+
   return (
     <div
-      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm transition-all duration-300 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm transition-all duration-300 ${visible ? "opacity-100" : "opacity-0"
+        }`}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="task-detail-heading"
     >
       <div
-        className={`flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:border-slate-700 dark:bg-slate-900/95 ${
-          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
-        }`}
+        className={`flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:border-slate-700 dark:bg-slate-900/95 ${visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+          }`}
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-700/80 p-5">
           <div className="min-w-0">
@@ -201,14 +211,24 @@ export function TaskDetail({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Description
-                  <Textarea
-                    maxLength={2000}
-                    placeholder="Add useful context, expected outcome, or dependencies..."
-                    {...register("description")}
-                  />
-                </label>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Description
+                  </label>
+                  <button
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 shadow-2xs transition hover:border-indigo-400 hover:from-indigo-100 hover:to-purple-100 dark:border-indigo-800/80 dark:from-indigo-950/60 dark:to-purple-950/40 dark:text-indigo-300 dark:hover:border-indigo-700 cursor-pointer"
+                    onClick={() => setIsDecomposerOpen(true)}
+                    type="button"
+                  >
+                    <Sparkles className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
+                    Break Down with AI
+                  </button>
+                </div>
+                <Textarea
+                  maxLength={2000}
+                  placeholder="Add useful context, expected outcome, or dependencies..."
+                  {...register("description")}
+                />
                 {errors.description ? (
                   <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
                     {errors.description.message}
@@ -253,7 +273,9 @@ export function TaskDetail({
             currentUserId={userId}
             currentUserName={userName}
             role={role}
+            taskDescription={task.description}
             taskId={task.id}
+            taskTitle={task.title}
           />
 
           <div className="mt-8 border-t border-slate-200 dark:border-slate-700/80 pt-6">
@@ -263,6 +285,16 @@ export function TaskDetail({
           </div>
         </div>
       </div>
+
+      <TaskDecomposerModal
+        isOpen={isDecomposerOpen}
+        onClose={() => setIsDecomposerOpen(false)}
+        onInsertChecklist={handleInsertDecomposedChecklist}
+        priority={task.priority}
+        taskId={task.id}
+        taskDescription={task.description}
+        taskTitle={task.title}
+      />
     </div>
   );
 }

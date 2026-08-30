@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/types/prisma_type";
+
 
 export const roles = Object.values(Role) as [Role, ...Role[]];
 export type RoleValue = Role;

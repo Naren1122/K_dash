@@ -1,4 +1,5 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/lib/types/prisma_type";
+
 import {
   AppError,
   ConflictError,

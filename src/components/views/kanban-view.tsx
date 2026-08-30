@@ -16,8 +16,8 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState } from "react";
 import { TaskCard } from "@/components/board/task-card";
 import { DroppableColumn } from "@/components/board/droppable-column";
-import type { BoardColumn } from "@/types/column-types";
-import type { Assignee, BoardTask } from "@/types/types";
+import type { BoardColumn } from "@/lib/types/column-types";
+import type { Assignee, BoardTask } from "@/lib/types/types";
 import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 
 type KanbanViewProps = {
@@ -124,10 +124,10 @@ export function KanbanView({
               isAdmin={isAdmin}
               currentUserId={currentUserId}
               isPending={false}
-              onStatusChange={() => {}}
-              onAssigneeChange={() => {}}
-              onView={() => {}}
-              onDelete={() => {}}
+              onStatusChange={() => { }}
+              onAssigneeChange={() => { }}
+              onView={() => { }}
+              onDelete={() => { }}
             />
           </div>
         ) : null}

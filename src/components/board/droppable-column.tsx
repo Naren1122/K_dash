@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DraggableTaskCard } from "@/components/board/draggable-task-card";
-import type { Assignee, BoardTask } from "@/types/types";
-import type { BoardColumn } from "@/types/column-types";
+import type { Assignee, BoardTask } from "@/lib/types/types";
+import type { BoardColumn } from "@/lib/types/column-types";
 import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 
 type DroppableColumnProps = {
@@ -77,9 +77,8 @@ export function DroppableColumn({
 
   return (
     <section
-      className={`rounded-2xl border shadow-sm ${style.border} ${style.soft} p-4 transition-all duration-200 backdrop-blur-xs ${
-        isOver ? "ring-4 ring-sky-400/40 scale-[1.01] shadow-lg shadow-sky-500/15" : ""
-      }`}
+      className={`rounded-2xl border shadow-sm ${style.border} ${style.soft} p-4 transition-all duration-200 backdrop-blur-xs ${isOver ? "ring-4 ring-sky-400/40 scale-[1.01] shadow-lg shadow-sky-500/15" : ""
+        }`}
     >
       {/* Column Header */}
       <div className="mb-4 flex items-center justify-between px-1">
@@ -94,13 +93,12 @@ export function DroppableColumn({
           {/* WIP limit badge */}
           {column.wipLimit !== null ? (
             <span
-              className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-                isOverLimit
+              className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${isOverLimit
                   ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-800 animate-bounce"
                   : isAtLimit
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-              }`}
+                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                }`}
               title={`WIP Limit: ${column.wipLimit}`}
             >
               {tasks.length}/{column.wipLimit}

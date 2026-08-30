@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { createLabel, deleteLabel, updateLabel } from "@/actions/labels";
+import { createLabel, deleteLabel, updateLabel } from "@/lib/actions/labels";
 import {
   createLabelSchema,
   CreateLabelFormValues,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/schemas/labelsSchema";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-import { Label } from "@/types/types";
+import { Label } from "@/lib/types/types";
 import { useActionRunner } from "@/hooks/useActionRunner";
 
 type LabelManagerProps = {
@@ -119,11 +119,10 @@ export function LabelManager({ labels }: LabelManagerProps) {
                 key={color}
                 aria-label={`Choose color ${color}`}
                 aria-pressed={selectedColor === color}
-                className={`h-7 w-7 rounded-full transition cursor-pointer ${
-                  selectedColor === color
-                    ? "ring-2 ring-slate-900 dark:ring-white ring-offset-2 dark:ring-offset-slate-900"
-                    : "hover:scale-110"
-                }`}
+                className={`h-7 w-7 rounded-full transition cursor-pointer ${selectedColor === color
+                  ? "ring-2 ring-slate-900 dark:ring-white ring-offset-2 dark:ring-offset-slate-900"
+                  : "hover:scale-110"
+                  }`}
                 onClick={() => setValue("color", color as CreateLabelInput["color"], { shouldValidate: true })}
                 style={{ backgroundColor: color }}
                 type="button"

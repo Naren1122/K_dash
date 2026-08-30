@@ -1,4 +1,4 @@
-import { requireAdmin } from "@/utils/auth-guard";
+import { requireAdmin } from "@/lib/utils/auth-guard";
 
 export default async function AdminLayout({
   children,

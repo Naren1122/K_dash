@@ -2,18 +2,21 @@
 
 import { useEffect, useOptimistic, useState } from "react";
 
-import { createComment, deleteComment, updateComment } from "@/actions/comments";
+import { createComment, deleteComment, updateComment } from "@/lib/actions/comments";
 import { createCommentSchema } from "@/lib/schemas/commentsSchema";
-import type { Assignee, Comment } from "@/types/types";
+import type { Assignee, Comment } from "@/lib/types/types";
 import { useActionRunner } from "@/hooks/useActionRunner";
-import { getInitials } from "@/utils/initials";
+import { getInitials } from "@/lib/utils/initials";
 import { MarkdownContent } from "@/components/shared/markdown";
 import { MentionAutocomplete } from "@/components/comments/mention-autocomplete";
+import { ThreadSummaryCard } from "@/components/ai/thread-summary-card";
 
 const EDIT_WINDOW_MS = 5 * 60 * 1000;
 
 type TaskCommentsProps = {
   taskId: string;
+  taskTitle?: string;
+  taskDescription?: string | null;
   comments: Comment[];
   currentUserId: string;
   role: "ADMIN" | "MEMBER";
@@ -24,6 +27,8 @@ type TaskCommentsProps = {
 
 export function TaskComments({
   taskId,
+  taskTitle = "Task Discussion",
+  taskDescription,
   comments,
   currentUserId,
   role,
@@ -144,6 +149,17 @@ export function TaskComments({
         </p>
       ) : null}
 
+      {optimisticComments.length >= 2 ? (
+        <div className="mt-3">
+          <ThreadSummaryCard
+            comments={optimisticComments}
+            taskId={taskId}
+            taskDescription={taskDescription}
+            taskTitle={taskTitle}
+          />
+        </div>
+      ) : null}
+
       <ul className="mt-3 space-y-3">
         {optimisticComments.length === 0 ? (
           <li className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-6 text-center text-xs font-medium text-slate-400 dark:text-slate-500">
@@ -158,9 +174,8 @@ export function TaskComments({
 
             return (
               <li
-                className={`rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-sky-50/20 p-3.5 shadow-2xs dark:border-slate-700 dark:from-slate-800 dark:via-slate-800/90 dark:to-slate-800/60 ${
-                  isOptimistic ? "opacity-70" : ""
-                }`}
+                className={`rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-sky-50/20 p-3.5 shadow-2xs dark:border-slate-700 dark:from-slate-800 dark:via-slate-800/90 dark:to-slate-800/60 ${isOptimistic ? "opacity-70" : ""
+                  }`}
                 key={comment.id}
               >
                 <div className="flex items-start gap-2.5">

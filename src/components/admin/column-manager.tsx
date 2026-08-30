@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { createColumn, updateColumn, deleteColumn, reorderColumns } from "@/actions/columns";
+import { createColumn, updateColumn, deleteColumn, reorderColumns } from "@/lib/actions/columns";
 import { useActionRunner } from "@/hooks/useActionRunner";
 import { Pagination } from "@/components/ui/pagination";
-import type { BoardColumn } from "@/types/column-types";
+import type { BoardColumn } from "@/lib/types/column-types";
 
 type ColumnManagerProps = {
   columns: BoardColumn[];

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Assignee } from "@/types/types";
-import { getInitials } from "@/utils/initials";
+import type { Assignee } from "@/lib/types/types";
+import { getInitials } from "@/lib/utils/initials";
 
 type MentionAutocompleteProps = {
   assignees: Assignee[];

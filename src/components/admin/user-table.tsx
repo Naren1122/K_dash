@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import { Trash2, UserPlus } from "lucide-react";
 import { CreateUserDialog } from "./create-user-dialog";
-import { deleteUser } from "@/actions/users";
+import { deleteUser } from "@/lib/actions/users";
 import { useActionRunner } from "@/hooks/useActionRunner";
 import { Pagination } from "@/components/ui/pagination";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/lib/types/prisma_type";
+
 
 interface UserItem {
   id: string;
@@ -93,11 +94,10 @@ export function UserTable({ users }: UserTableProps) {
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs ${
-                            isAdmin
-                              ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
-                              : "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
-                          }`}
+                          className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs ${isAdmin
+                            ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+                            : "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
+                            }`}
                         >
                           {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                         </div>
@@ -111,16 +111,14 @@ export function UserTable({ users }: UserTableProps) {
                     </td>
                     <td className="px-4 py-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                          isAdmin
-                            ? "bg-purple-50 text-purple-700 border border-purple-200/60 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800"
-                            : "bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${isAdmin
+                          ? "bg-purple-50 text-purple-700 border border-purple-200/60 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800"
+                          : "bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800"
+                          }`}
                       >
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            isAdmin ? "bg-purple-600 dark:bg-purple-400" : "bg-sky-500 dark:bg-sky-400"
-                          }`}
+                          className={`h-1.5 w-1.5 rounded-full ${isAdmin ? "bg-purple-600 dark:bg-purple-400" : "bg-sky-500 dark:bg-sky-400"
+                            }`}
                         />
                         {user.role}
                       </span>

@@ -1,6 +1,12 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -28,22 +34,27 @@ enum Priority {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String         @unique
-  emailVerified DateTime?
-  passwordHash  String
-  role          Role           @default(MEMBER)
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  assignedTasks Task[]         @relation("TaskAssignee")
-  createdTasks  Task[]         @relation("TaskCreator")
-  comments      Comment[]
-  activities    ActivityLog[]
-  notifications Notification[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                   String         @id @default(cuid())
+  name                 String?
+  email                String         @unique
+  emailVerified        DateTime?      @map("email_verified")
+  passwordHash         String         @map("password_hash")
+  role                 Role           @default(MEMBER)
+  image                String?
+  accounts             Account[]
+  sessions             Session[]
+  assignedTasks        Task[]         @relation("TaskAssignee")
+  createdTasks         Task[]         @relation("TaskCreator")
+  comments             Comment[]
+  activities           ActivityLog[]
+  notifications        Notification[]
+  sentChatMessages     ChatMessage[]  @relation("SentChatMessages")
+  receivedChatMessages ChatMessage[]  @relation("ReceivedChatMessages")
+  chatReactions        ChatReaction[]
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  @@map("users")
 }
 
 model Task {
@@ -52,76 +63,81 @@ model Task {
   description String?
   status      TaskStatus    @default(TODO)
   priority    Priority      @default(MEDIUM)
-  dueDate     DateTime?
-  assigneeId  String?
-  createdById String
+  dueDate     DateTime?     @map("due_date")
+  assigneeId  String?       @map("assignee_id")
+  createdById String        @map("created_by_id")
   assignee    User?         @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   createdBy   User          @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
   labels      TaskLabel[]
   comments    Comment[]
   activities  ActivityLog[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
 
   @@index([assigneeId])
   @@index([createdById])
   @@index([status])
   @@index([priority])
   @@index([dueDate])
+  @@map("tasks")
 }
 
 model Label {
   id        String      @id @default(cuid())
   name      String
   color     String
-  boardId   String?
+  boardId   String?     @map("board_id")
   board     Board?      @relation(fields: [boardId], references: [id], onDelete: Cascade)
   tasks     TaskLabel[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
 
   @@unique([name, boardId])
+  @@map("labels")
 }
 
 model TaskLabel {
-  taskId   String
-  labelId  String
-  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  label    Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  taskId  String @map("task_id")
+  labelId String @map("label_id")
+  task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label   Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
 
   @@id([taskId, labelId])
   @@index([labelId])
+  @@map("task_labels")
 }
 
 model Comment {
   id        String   @id @default(cuid())
   content   String   @db.Text
-  taskId    String
+  taskId    String   @map("task_id")
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  authorId  String
+  authorId  String   @map("author_id")
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([taskId])
   @@index([authorId])
+  @@map("comments")
 }
 
 model ActivityLog {
   id        String   @id @default(cuid())
-  taskId    String
+  taskId    String   @map("task_id")
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  userId    String
+  userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   action    String
   field     String?
-  oldValue  String?  @db.Text
-  newValue  String?  @db.Text
-  createdAt DateTime @default(now())
+  oldValue  String?  @db.Text @map("old_value")
+  newValue  String?  @db.Text @map("new_value")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([taskId])
   @@index([userId])
   @@index([createdAt])
+  @@map("activity_logs")
 }
 
 enum NotificationType {
@@ -133,25 +149,29 @@ enum NotificationType {
 
 model Notification {
   id        String           @id @default(cuid())
-  userId    String
+  userId    String           @map("user_id")
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   payload   Json
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
 
   @@index([userId, readAt])
   @@index([createdAt])
+  @@map("notifications")
 }
 
 model Board {
-  id        String   @id @default(cuid())
-  name      String
-  key       String   @unique // short code like "ENG", "DES"
-  columns   Column[]
-  labels    Label[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(cuid())
+  name         String
+  key          String        @unique // short code like "ENG", "DES"
+  columns      Column[]
+  labels       Label[]
+  chatMessages ChatMessage[]
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@map("boards")
 }
 
 model Column {
@@ -159,21 +179,22 @@ model Column {
   name     String
   position Int
   status   TaskStatus
-  wipLimit Int?
-  boardId  String
+  wipLimit Int?       @map("wip_limit")
+  boardId  String     @map("board_id")
   board    Board      @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, position])
   @@unique([boardId, status])
+  @@map("columns")
 }
 
 // These tables support the Prisma adapter. Credentials authentication will use JWT sessions.
 model Account {
   id                String  @id @default(cuid())
-  userId            String
+  userId            String  @map("user_id")
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String  @map("provider_account_id")
   refresh_token     String? @db.Text
   access_token      String? @db.Text
   expires_at        Int?
@@ -184,14 +205,17 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -199,5 +223,39 @@ model VerificationToken {
   token      String   @unique
   expires    DateTime
 
-  @@unique([identifier, token])
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+model ChatMessage {
+  id          String         @id @default(cuid())
+  content     String         @db.Text
+  userId      String         @map("user_id")
+  user        User           @relation("SentChatMessages", fields: [userId], references: [id], onDelete: Cascade)
+  recipientId String?        @map("recipient_id")
+  recipient   User?          @relation("ReceivedChatMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  boardId     String?        @map("board_id")
+  board       Board?         @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  reactions   ChatReaction[]
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([boardId, createdAt])
+  @@index([userId, recipientId])
+  @@index([recipientId, createdAt])
+  @@map("chat_messages")
+}
+
+model ChatReaction {
+  id        String      @id @default(cuid())
+  messageId String      @map("message_id")
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String      @map("user_id")
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("chat_reactions")
 }

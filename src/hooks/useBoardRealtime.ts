@@ -8,7 +8,7 @@ import type {
   RealtimeTaskMovedPayload,
   RealtimeTaskSavedPayload,
   RealtimeTaskDeletedPayload,
-} from "@/types/realtime-types";
+} from "@/lib/types/realtime-types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 type UseBoardRealtimeProps = {
@@ -149,7 +149,6 @@ export function useBoardRealtime({
     });
 
     return () => {
-      setIsConnected(false);
       supabase.removeChannel(channel);
       channelRef.current = null;
     };

@@ -3,7 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TaskCard } from "@/components/board/task-card";
-import type { Assignee, BoardTask } from "@/types/types";
+import type { Assignee, BoardTask } from "@/lib/types/types";
 import type { TaskStatusValue } from "@/lib/schemas/tasksSchema";
 
 type DraggableTaskCardProps = {

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { logger } from "@/utils/logger";
+import { logger } from "@/lib/utils/logger";
 
 export default function GlobalError({
   error,

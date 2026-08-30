@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { BoardTask } from "@/types/types";
-import { formatLocalDate, getDueDateStatus } from "@/utils/dueDate";
+import type { BoardTask } from "@/lib/types/types";
+import { formatLocalDate, getDueDateStatus } from "@/lib/utils/dueDate";
 
 type ZoomLevel = "day" | "week" | "month";
 
@@ -196,11 +196,10 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                 key={z}
                 type="button"
                 onClick={() => setZoom(z)}
-                className={`rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer ${
-                  zoom === z
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
+                className={`rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer ${zoom === z
+                  ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  }`}
               >
                 {z.charAt(0).toUpperCase() + z.slice(1)}
               </button>
@@ -239,14 +238,12 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
               role="switch"
               aria-checked={showDone}
               onClick={() => setShowDone(!showDone)}
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
-                showDone ? "bg-indigo-600 dark:bg-indigo-500" : "bg-slate-300 dark:bg-slate-700"
-              }`}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer ${showDone ? "bg-indigo-600 dark:bg-indigo-500" : "bg-slate-300 dark:bg-slate-700"
+                }`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                  showDone ? "translate-x-4.5" : "translate-x-0.5"
-                }`}
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${showDone ? "translate-x-4.5" : "translate-x-0.5"
+                  }`}
               />
             </button>
           </label>
@@ -285,16 +282,14 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                 return (
                   <div
                     key={i}
-                    className={`relative flex flex-col items-center justify-center border-r border-slate-200/70 dark:border-slate-700/80 py-2 text-[11px] ${
-                      isWeekend ? "bg-slate-100/70 dark:bg-slate-800/50" : ""
-                    }`}
+                    className={`relative flex flex-col items-center justify-center border-r border-slate-200/70 dark:border-slate-700/80 py-2 text-[11px] ${isWeekend ? "bg-slate-100/70 dark:bg-slate-800/50" : ""
+                      }`}
                     style={{ width: dayWidth }}
                   >
                     <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-400 uppercase">{dayLetter}</span>
                     <span
-                      className={`font-extrabold ${
-                        isToday ? "text-violet-600 dark:text-violet-400 text-xs" : "text-slate-800 dark:text-slate-200"
-                      }`}
+                      className={`font-extrabold ${isToday ? "text-violet-600 dark:text-violet-400 text-xs" : "text-slate-800 dark:text-slate-200"
+                        }`}
                     >
                       {dateNum}
                     </span>
@@ -319,9 +314,8 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                   return (
                     <div
                       key={i}
-                      className={`border-r border-slate-200/50 dark:border-slate-700/50 h-full ${
-                        isWeekend ? "bg-slate-100/50 dark:bg-slate-800/30" : ""
-                      } ${isToday ? "bg-violet-50/30 dark:bg-violet-950/30" : ""}`}
+                      className={`border-r border-slate-200/50 dark:border-slate-700/50 h-full ${isWeekend ? "bg-slate-100/50 dark:bg-slate-800/30" : ""
+                        } ${isToday ? "bg-violet-50/30 dark:bg-violet-950/30" : ""}`}
                       style={{ width: dayWidth }}
                     />
                   );
@@ -358,13 +352,12 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                     <button
                       type="button"
                       onClick={() => onViewTask(task)}
-                      className={`relative flex w-full flex-col justify-between rounded-2xl border p-3 text-left shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer ${
-                        isGradient
-                          ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 border-violet-400/80 text-white shadow-violet-200/50"
-                          : isCompleted
+                      className={`relative flex w-full flex-col justify-between rounded-2xl border p-3 text-left shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer ${isGradient
+                        ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 border-violet-400/80 text-white shadow-violet-200/50"
+                        : isCompleted
                           ? "bg-slate-50 border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600 opacity-80 text-slate-600 dark:text-slate-300"
                           : `${accent.bg} hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600 dark:text-white`
-                      }`}
+                        }`}
                     >
                       {/* Left vertical accent stripe */}
                       {!isGradient ? (
@@ -377,9 +370,8 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                       <div className="flex items-start justify-between gap-2 pl-1.5">
                         <div className="truncate">
                           <p
-                            className={`truncate text-xs font-extrabold ${
-                              isGradient ? "text-white" : "text-slate-900 dark:text-white"
-                            }`}
+                            className={`truncate text-xs font-extrabold ${isGradient ? "text-white" : "text-slate-900 dark:text-white"
+                              }`}
                           >
                             {task.title}
                           </p>
@@ -395,13 +387,12 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                             )}
                             {task.dueDate ? (
                               <span
-                                className={`text-[9px] font-semibold ${
-                                  isGradient
-                                    ? "text-violet-200"
-                                    : isOverdue
+                                className={`text-[9px] font-semibold ${isGradient
+                                  ? "text-violet-200"
+                                  : isOverdue
                                     ? "text-red-600 dark:text-red-400 font-bold"
                                     : "text-slate-400 dark:text-slate-500"
-                                }`}
+                                  }`}
                               >
                                 {formatLocalDate(task.dueDate)}
                               </span>
@@ -414,11 +405,10 @@ export function TimelineView({ tasks, onViewTask }: TimelineViewProps) {
                           {task.assignee ? (
                             <div
                               title={task.assignee.name || task.assignee.email}
-                              className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold shadow-2xs ${
-                                isGradient
-                                  ? "bg-white/20 text-white border border-white/30"
-                                  : "bg-slate-900 text-white dark:bg-slate-700"
-                              }`}
+                              className={`flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold shadow-2xs ${isGradient
+                                ? "bg-white/20 text-white border border-white/30"
+                                : "bg-slate-900 text-white dark:bg-slate-700"
+                                }`}
                             >
                               {(task.assignee.name || task.assignee.email).charAt(0).toUpperCase()}
                             </div>

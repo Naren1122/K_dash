@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { ErrorFallback } from "@/components/error/error-fallback";
-import { logger } from "@/utils/logger";
+import { logger } from "@/lib/utils/logger";
 
 export default function ErrorPage({
   error,

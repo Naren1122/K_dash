@@ -7,7 +7,9 @@ import { signOut } from "next-auth/react";
 import { LogOut, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import type { Role } from "@prisma/client";
+import { TeamChatDrawer } from "@/components/chat/team-chat-drawer";
+import type { Role } from "@/lib/types/prisma_type";
+
 
 interface AppShellProps {
   user: {
@@ -80,9 +82,8 @@ export function AppShell({ user, children }: AppShellProps) {
 
       {/* Sidebar Component */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white p-4 transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 md:translate-x-0 ${
-          mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white p-4 transition-transform duration-200 dark:border-slate-800 dark:bg-slate-900 md:translate-x-0 ${mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+          }`}
       >
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 py-2">
@@ -119,11 +120,10 @@ export function AppShell({ user, children }: AppShellProps) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                  isActive
+                className={`group flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${isActive
                     ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white shadow-2xs font-semibold"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   {item.icon}
@@ -131,13 +131,12 @@ export function AppShell({ user, children }: AppShellProps) {
                 </div>
                 {item.badge ? (
                   <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                      isActive
+                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isActive
                         ? "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200"
                         : isRestricted
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-                        : "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
-                    }`}
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                          : "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
+                      }`}
                   >
                     {item.badge}
                   </span>
@@ -151,11 +150,10 @@ export function AppShell({ user, children }: AppShellProps) {
         <div className="mt-auto rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
           <div className="flex items-center gap-2.5 min-w-0">
             <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${
-                isAdmin
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${isAdmin
                   ? "bg-indigo-600 text-white shadow-xs"
                   : "bg-slate-700 text-white shadow-xs"
-              }`}
+                }`}
             >
               {getInitials(user.name, user.email)}
             </div>
@@ -166,11 +164,10 @@ export function AppShell({ user, children }: AppShellProps) {
               <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{user.email || ""}</p>
             </div>
             <span
-              className={`rounded-md px-2 py-0.5 text-[10px] font-bold shrink-0 ${
-                isAdmin
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold shrink-0 ${isAdmin
                   ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800"
                   : "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
-              }`}
+                }`}
             >
               {user.role}
             </span>
@@ -213,11 +210,10 @@ export function AppShell({ user, children }: AppShellProps) {
 
             {/* Role Badge */}
             <span
-              className={`rounded-lg px-2.5 py-1 text-[11px] sm:text-xs font-bold shadow-2xs ${
-                isAdmin
+              className={`rounded-lg px-2.5 py-1 text-[11px] sm:text-xs font-bold shadow-2xs ${isAdmin
                   ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white"
                   : "bg-gradient-to-r from-sky-500 to-blue-600 text-white"
-              }`}
+                }`}
             >
               {user.role}
             </span>
@@ -236,6 +232,14 @@ export function AppShell({ user, children }: AppShellProps) {
 
         {/* Dynamic Page Content */}
         {children}
+
+        {/* Global Multiplayer Team Chat */}
+        <TeamChatDrawer
+          userId={user.id}
+          userName={user.name}
+          userEmail={user.email}
+          role={user.role}
+        />
       </div>
     </div>
   );

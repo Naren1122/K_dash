@@ -84,7 +84,7 @@ npm run build
 ## Architecture and security
 
 - [`src/app/page.tsx`](src/app/page.tsx) is a Server Component. It calls `auth()` and Prisma on the server, redirects unauthenticated users to `/login`, and passes serializable board data to the client.
-- [`auth.ts`](auth.ts) configures the Auth.js Credentials provider. It compares submitted passwords with bcrypt hashes and copies the user id and role into the JWT-backed session.
+- [`src/auth.ts`](src/auth.ts) configures the Auth.js Credentials provider. It compares submitted passwords with bcrypt hashes and copies the user id and role into the JWT-backed session.
 - [`src/components/board.tsx`](src/components/board.tsx) is the interactive Client Component. It presents controls appropriate to the visible role, but those controls are not the security boundary.
 - [`src/app/actions/tasks.ts`](src/app/actions/tasks.ts) contains all writes. Every Server Action re-fetches the session, validates input, and verifies the role. For member status changes, it also re-reads the task and confirms `assigneeId === session.user.id` before updating. Admin-only actions reject members on the server.
 

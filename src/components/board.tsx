@@ -8,15 +8,16 @@ import {
   reassignTask,
   updateTask,
   updateTaskStatus,
-} from "@/actions/tasks";
+} from "@/lib/actions/tasks";
 import { useActionRunner } from "@/hooks/useActionRunner";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { BoardHeader } from "@/components/layout/board-header";
 import { KanbanView } from "@/components/views/kanban-view";
-import type { Assignee, BoardTask, Label } from "@/types/types";
-import type { BoardColumn } from "@/types/column-types";
+import type { Assignee, BoardTask, Label } from "@/lib/types/types";
+import type { BoardColumn } from "@/lib/types/column-types";
+import type { Role } from "@/lib/types/prisma_type";
 import type { CreateTaskInput, TaskStatusValue } from "@/lib/schemas/tasksSchema";
-import { filterTasks, sortTasks } from "@/utils/taskFilterSort";
+import { filterTasks, sortTasks } from "@/lib/utils/taskFilterSort";
 import { useBoardFilterStore, useBoardModalStore } from "@/lib/stores";
 import { useBoardRealtime } from "@/hooks/useBoardRealtime";
 import { LivePresenceBar } from "@/components/board/live-presence-bar";
@@ -77,11 +78,12 @@ type BoardProps = {
   labels: Label[];
   tasks: BoardTask[];
   boardColumns: BoardColumn[];
-  role: "ADMIN" | "MEMBER";
+  role: Role;
   userId: string;
   userName?: string | null;
   userEmail?: string | null;
 };
+
 
 export function Board({
   assignee,
@@ -423,11 +425,10 @@ export function Board({
               type="button"
               disabled={totalPages <= 1}
               onClick={() => setCurrentPage(pageItem)}
-              className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2.5 text-xs font-bold transition ${
-                safePage === pageItem
-                  ? "bg-slate-900 text-white font-extrabold shadow-xs dark:bg-sky-600 dark:text-white"
-                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
-              } ${totalPages <= 1 ? "cursor-default" : "cursor-pointer"}`}
+              className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2.5 text-xs font-bold transition ${safePage === pageItem
+                ? "bg-slate-900 text-white font-extrabold shadow-xs dark:bg-sky-600 dark:text-white"
+                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                } ${totalPages <= 1 ? "cursor-default" : "cursor-pointer"}`}
             >
               {pageItem}
             </button>
