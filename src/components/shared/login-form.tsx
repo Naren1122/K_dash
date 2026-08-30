@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +21,7 @@ export function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "admin@kanban.local", password: "Admin123!" },
+    defaultValues: { email: "", password: "" },
   });
 
   useEffect(() => {
@@ -59,26 +58,113 @@ export function LoginForm() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] p-3 sm:p-5 lg:p-7">
-      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-white shadow-[0_28px_80px_-35px_rgba(15,23,42,0.35)] lg:min-h-[calc(100vh-3.5rem)] lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative hidden overflow-hidden bg-slate-950 p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
-          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full border-[38px] border-sky-400/10" /><div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-gradient-to-br from-sky-500/20 to-indigo-500/5 blur-2xl" />
-          <div className="relative flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5"><Image alt="Kanban logo" className="h-full w-full object-contain" height={56} priority src="/logo.png" width={56} /></div><span className="text-lg font-bold tracking-tight">Kanban Task Board</span></div>
-          <div className="relative max-w-md"><p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-300">Clarity in every task</p><h1 className="mt-5 text-5xl font-bold leading-[1.08] tracking-tight">Turn plans into meaningful progress.</h1><p className="mt-6 max-w-sm text-base leading-7 text-slate-300">A calm, collaborative space for keeping the right work moving at the right time.</p><div className="mt-10 flex gap-3"><span className="h-1.5 w-12 rounded-full bg-sky-400" /><span className="h-1.5 w-5 rounded-full bg-white/30" /><span className="h-1.5 w-5 rounded-full bg-white/30" /></div></div>
-          <p className="relative text-sm text-slate-400">Simple flow. Shared focus. Better outcomes.</p>
+    <main className="min-h-screen bg-[#f8f9ff] dark:bg-[#0b101b] p-4 sm:p-6 lg:p-10 flex items-center justify-center">
+      <div className="w-full max-w-[1200px] grid overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.12)] lg:grid-cols-2">
+        {/* Left Stitch Brand Panel */}
+        <section className="relative hidden overflow-hidden bg-[#111625] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full border-[32px] border-sky-500/10" />
+          <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-gradient-to-br from-sky-500/20 to-blue-600/10 blur-3xl" />
+          
+          <div className="relative flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-black text-lg shadow-md shadow-sky-500/25">
+              K
+            </div>
+            <div>
+              <span className="text-base font-bold tracking-tight text-white block">K-Dash</span>
+              <span className="text-[11px] text-slate-400 font-medium">Enterprise Project Board</span>
+            </div>
+          </div>
+
+          <div className="relative max-w-md my-auto py-8">
+            <p className="text-xs font-extrabold uppercase tracking-widest text-sky-400">
+              Corporate Modern Workspace
+            </p>
+            <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight text-white">
+              Turn plans into meaningful progress.
+            </h1>
+            <p className="mt-4 text-sm leading-relaxed text-slate-300">
+              A high-precision, collaborative Kanban workspace engineered for clarity, speed, and real-time team synchronization.
+            </p>
+            <div className="mt-8 flex items-center gap-2">
+              <span className="h-1.5 w-8 rounded-full bg-sky-400" />
+              <span className="h-1.5 w-2 rounded-full bg-slate-700" />
+              <span className="h-1.5 w-2 rounded-full bg-slate-700" />
+            </div>
+          </div>
+
+          <div className="relative flex items-center justify-between text-xs text-slate-400 pt-6 border-t border-slate-800/80">
+            <span>Role-Based Auth • Real-Time • AI-Powered</span>
+            <span className="font-semibold text-slate-300">v2.0</span>
+          </div>
         </section>
 
-        <section className="flex items-center justify-center p-6 sm:p-10 lg:p-14">
-          <div className="w-full max-w-md">
-            <div className="flex items-center gap-3 lg:hidden"><div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-950 p-1"><Image alt="Kanban logo" className="h-full w-full object-contain" height={48} priority src="/logo.png" width={48} /></div><span className="font-bold text-slate-900">Kanban Task Board</span></div>
-            <p className="mt-10 text-xs font-bold uppercase tracking-[0.2em] text-sky-600 lg:mt-0">Welcome back</p><h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Sign in to your workspace</h2><p className="mt-3 text-sm leading-6 text-slate-500">Use a seeded account below to explore the board and its role-based controls.</p>
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)}>
-              <label className="block text-sm font-bold text-slate-700" htmlFor="email">Email<input autoComplete="email" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100" id="email" type="email" {...register("email")} /></label>
-              {errors.email ? <p className="text-xs font-medium text-red-600">{errors.email.message}</p> : null}
-              <label className="block text-sm font-bold text-slate-700" htmlFor="password">Password<input autoComplete="current-password" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100" id="password" type="password" {...register("password")} /></label>
-              {errors.password ? <p className="text-xs font-medium text-red-600">{errors.password.message}</p> : null}
-              {error ? <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</p> : null}
-              <button className="w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60" disabled={isSubmitting} type="submit">{isSubmitting ? "Signing in..." : "Sign in to board"}</button>
+        {/* Right Form Panel */}
+        <section className="flex flex-col justify-center p-8 sm:p-12 lg:p-14">
+          <div className="w-full max-w-md mx-auto">
+            <div className="flex items-center gap-3 lg:hidden mb-8">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-bold text-base">
+                K
+              </div>
+              <div>
+                <span className="font-bold text-slate-900 dark:text-white block">K-Dash</span>
+                <span className="text-xs text-slate-400">Project Management</span>
+              </div>
+            </div>
+
+            <p className="text-xs font-extrabold uppercase tracking-widest text-sky-600 dark:text-sky-400">
+              Welcome back
+            </p>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+              Sign in to workspace
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Enter your credentials below to access your workspace.
+            </p>
+
+            <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5" htmlFor="email">
+                  Email Address
+                </label>
+                <input
+                  autoComplete="email"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 dark:border-slate-800 dark:bg-slate-800/80 dark:text-white dark:focus:border-sky-400 dark:focus:ring-sky-950/60"
+                  id="email"
+                  type="email"
+                  placeholder="name@company.com"
+                  {...register("email")}
+                />
+                {errors.email ? <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.email.message}</p> : null}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5" htmlFor="password">
+                  Password
+                </label>
+                <input
+                  autoComplete="current-password"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 dark:border-slate-800 dark:bg-slate-800/80 dark:text-white dark:focus:border-sky-400 dark:focus:ring-sky-950/60"
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  {...register("password")}
+                />
+                {errors.password ? <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.password.message}</p> : null}
+              </div>
+
+              {error ? (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300" role="alert">
+                  {error}
+                </div>
+              ) : null}
+
+              <button
+                className="w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer dark:bg-sky-500 dark:hover:bg-sky-600"
+                disabled={isSubmitting}
+                type="submit"
+              >
+                {isSubmitting ? "Signing in..." : "Sign In to Workspace"}
+              </button>
             </form>
           </div>
         </section>

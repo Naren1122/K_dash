@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { PriorityBadge, PRIORITY_OPTIONS } from "@/components/board/priority-badge";
 import { DueDateBadge } from "@/components/board/due-date-badge";
-import { LabelPill } from "@/components/labels/label-pill";
 import { LabelPicker } from "@/components/labels/label-picker";
 import { ActivityFeed } from "@/components/board/activity-feed";
 import { TaskComments } from "@/components/comments/task-comments";
@@ -132,28 +131,34 @@ export function TaskDetail({
       aria-labelledby="task-detail-heading"
     >
       <div
-        className={`flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:border-slate-700 dark:bg-slate-900/95 ${visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
-          }`}
+        className={`flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:border-slate-800 dark:bg-slate-900 ${
+          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+        }`}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-700/80 p-5">
-          <div className="min-w-0">
-            <h2
-              className="truncate text-lg font-bold text-slate-900 dark:text-white"
-              id="task-detail-heading"
-            >
-              {task.title}
-            </h2>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <PriorityBadge priority={task.priority} />
-              {task.labels.map((label) => (
-                <LabelPill key={label.id} label={label} />
-              ))}
-              <DueDateBadge dueDate={task.dueDate} />
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs">
+              #
+            </div>
+            <div className="min-w-0">
+              <h2
+                className="truncate text-base font-bold text-slate-900 dark:text-white"
+                id="task-detail-heading"
+              >
+                {task.title}
+              </h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[11px] font-semibold text-slate-400">Status: {task.status}</span>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <PriorityBadge priority={task.priority} />
+                <DueDateBadge dueDate={task.dueDate} />
+              </div>
             </div>
           </div>
           <button
             aria-label="Close task details"
-            className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-500 shadow-2xs transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-rose-950/40 dark:hover:border-rose-800 dark:hover:text-rose-300 cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-500 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
             onClick={onClose}
             type="button"
           >
@@ -161,128 +166,172 @@ export function TaskDetail({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 md:p-6">
+        {/* Modal Body: 2-column Stitch layout */}
+        <div className="flex-1 overflow-y-auto p-6">
           {canEdit ? (
-            <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit((data) => onUpdate(task.id, data))}>
-              <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Title
-                  <Input maxLength={200} {...register("title")} />
-                </label>
-                {errors.title ? (
-                  <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.title.message}</p>
-                ) : null}
-              </div>
+            <form onSubmit={handleSubmit((data) => onUpdate(task.id, data))}>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Content (Left 2 cols) */}
+                <div className="lg:col-span-2 space-y-5">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">
+                      Task Title
+                    </label>
+                    <Input maxLength={200} {...register("title")} className="text-sm font-semibold" />
+                    {errors.title ? (
+                      <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.title.message}</p>
+                    ) : null}
+                  </div>
 
-              {isAdmin ? (
-                <>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Assignee
-                    <Select {...register("assigneeId")}>
-                      <option value="">Unassigned</option>
-                      {assignee.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name ?? a.email}
-                        </option>
-                      ))}
-                    </Select>
-                  </label>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Priority
-                    <Select {...register("priority")}>
-                      {PRIORITY_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </label>
-                </>
-              ) : null}
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Description & Checklist
+                      </label>
+                      <button
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700 shadow-2xs transition hover:bg-sky-100 dark:border-sky-800/80 dark:bg-sky-950/60 dark:text-sky-300 cursor-pointer"
+                        onClick={() => setIsDecomposerOpen(true)}
+                        type="button"
+                      >
+                        <Sparkles className="h-3 w-3 text-sky-600 dark:text-sky-400" />
+                        Break Down with AI
+                      </button>
+                    </div>
+                    <Textarea
+                      maxLength={2000}
+                      rows={5}
+                      placeholder="Add useful context, expected outcome, or dependencies..."
+                      {...register("description")}
+                    />
+                    {errors.description ? (
+                      <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+                        {errors.description.message}
+                      </p>
+                    ) : null}
+                  </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Due date
-                  <Input type="date" min={new Date().toISOString().split("T")[0]} {...register("dueDate")} />
-                </label>
-                {errors.dueDate ? (
-                  <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.dueDate.message}</p>
-                ) : null}
-              </div>
+                  {/* Comments Section */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <TaskComments
+                      assignees={assignee}
+                      comments={task.comments}
+                      currentUserEmail={userEmail}
+                      currentUserId={userId}
+                      currentUserName={userName}
+                      role={role}
+                      taskDescription={task.description}
+                      taskId={task.id}
+                      taskTitle={task.title}
+                    />
+                  </div>
 
-              <div className="sm:col-span-2">
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Description
-                  </label>
-                  <button
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 shadow-2xs transition hover:border-indigo-400 hover:from-indigo-100 hover:to-purple-100 dark:border-indigo-800/80 dark:from-indigo-950/60 dark:to-purple-950/40 dark:text-indigo-300 dark:hover:border-indigo-700 cursor-pointer"
-                    onClick={() => setIsDecomposerOpen(true)}
-                    type="button"
-                  >
-                    <Sparkles className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
-                    Break Down with AI
-                  </button>
+                  {/* Activity Log */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Activity Log</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Audit trail of changes for this task</p>
+                    <ActivityFeed taskId={task.id} />
+                  </div>
                 </div>
-                <Textarea
-                  maxLength={2000}
-                  placeholder="Add useful context, expected outcome, or dependencies..."
-                  {...register("description")}
-                />
-                {errors.description ? (
-                  <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
-                    {errors.description.message}
-                  </p>
-                ) : null}
-              </div>
-              <div className="sm:col-span-2">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Labels</span>
-                <LabelPicker labels={labels} selected={labelIds} onToggle={toggleLabel} />
-              </div>
-              {error ? (
-                <p
-                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300 sm:col-span-2"
-                  role="alert"
-                >
-                  {error}
-                </p>
-              ) : null}
-              <div className="flex justify-end sm:col-span-2">
-                <button
-                  className="rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-                  disabled={isPending || isSubmitting}
-                  type="submit"
-                >
-                  {isPending ? "Saving..." : "Save changes"}
-                </button>
+
+                {/* Sidebar Metadata (Right col) */}
+                <div className="space-y-5 rounded-2xl border border-slate-100 bg-slate-50/80 p-4.5 dark:border-slate-800 dark:bg-slate-800/40">
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Task Metadata
+                  </h3>
+
+                  {isAdmin ? (
+                    <>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                          Assignee
+                        </label>
+                        <Select {...register("assigneeId")}>
+                          <option value="">Unassigned</option>
+                          {assignee.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name ?? a.email}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                          Priority
+                        </label>
+                        <Select {...register("priority")}>
+                          {PRIORITY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">Assignee</span>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {task.assignee ? task.assignee.name ?? task.assignee.email : "Unassigned"}
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      Due Date
+                    </label>
+                    <Input type="date" min={new Date().toISOString().split("T")[0]} {...register("dueDate")} />
+                    {errors.dueDate ? (
+                      <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.dueDate.message}</p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Labels</span>
+                    <LabelPicker labels={labels} selected={labelIds} onToggle={toggleLabel} />
+                  </div>
+
+                  {error ? (
+                    <p
+                      className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300"
+                      role="alert"
+                    >
+                      {error}
+                    </p>
+                  ) : null}
+
+                  <div className="pt-2">
+                    <button
+                      className="w-full rounded-xl bg-slate-950 px-5 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer dark:bg-sky-500 dark:hover:bg-sky-600"
+                      disabled={isPending || isSubmitting}
+                      type="submit"
+                    >
+                      {isPending ? "Saving changes..." : "Save Changes"}
+                    </button>
+                  </div>
+                </div>
               </div>
             </form>
           ) : (
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">Assignee</h3>
-              <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                {task.assignee ? task.assignee.name ?? task.assignee.email : "Unassigned"}
-              </p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Description</h3>
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{task.description || "No description."}</p>
+              </div>
+              <TaskComments
+                assignees={assignee}
+                comments={task.comments}
+                currentUserEmail={userEmail}
+                currentUserId={userId}
+                currentUserName={userName}
+                role={role}
+                taskDescription={task.description}
+                taskId={task.id}
+                taskTitle={task.title}
+              />
             </div>
           )}
-
-          <TaskComments
-            assignees={assignee}
-            comments={task.comments}
-            currentUserEmail={userEmail}
-            currentUserId={userId}
-            currentUserName={userName}
-            role={role}
-            taskDescription={task.description}
-            taskId={task.id}
-            taskTitle={task.title}
-          />
-
-          <div className="mt-8 border-t border-slate-200 dark:border-slate-700/80 pt-6">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Activity Log</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">History of changes for this task</p>
-            <ActivityFeed taskId={task.id} />
-          </div>
         </div>
       </div>
 

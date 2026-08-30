@@ -66,7 +66,7 @@ export function UserTable({ users }: UserTableProps) {
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-slate-800 active:scale-[0.98] cursor-pointer dark:bg-sky-500 dark:hover:bg-sky-600"
             >
               <UserPlus className="h-3.5 w-3.5" />
               <span>Add Member</span>

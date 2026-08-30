@@ -2,21 +2,41 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-primary: #020617;
+  --color-primary-container: #151b2d;
+  --color-on-primary-container: #7d839a;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+  --color-surface: #f8f9ff;
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #46464c;
+  --color-secondary: #006591;
+  --color-secondary-container: #39b8fd;
+  --color-outline: #76767d;
+  --color-outline-variant: #c6c6cd;
+  --font-inter: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f8f9ff;
+  --foreground: #0b1c30;
 }
 
 .dark {
   --background: #090d16;
-  --foreground: #f8fafc;
+  --foreground: #f8f9ff;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter, var(--font-geist-sans)), Inter, sans-serif;
   min-height: 100vh;
+  letter-spacing: -0.01em;
 }
 
 .dark body {
@@ -24,6 +44,22 @@ body {
 }
 
 ::selection {
-  background: #6366f1;
+  background: #0284c7;
   color: #ffffff;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.45);
 }

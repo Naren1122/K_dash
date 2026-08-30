@@ -91,29 +91,31 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs transition-all duration-300 ${visible ? "opacity-100" : "opacity-0"
-        }`}
+      className={`fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm transition-all duration-300 ${
+        visible ? "opacity-100" : "opacity-0"
+      }`}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-user-title"
     >
       <div
-        className={`w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
-          }`}
+        className={`w-full max-w-lg rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
+          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+        }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
               <UserPlus className="h-5 w-5" />
             </div>
             <div>
-              <h2 id="create-user-title" className="text-lg font-bold text-slate-900 dark:text-white">
+              <h2 id="create-user-title" className="text-base font-bold text-slate-900 dark:text-white">
                 Add Team Member
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Create a new user account with credentials and role assignment.
+                Create a new user account with credentials and workspace role.
               </p>
             </div>
           </div>
@@ -122,7 +124,7 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="Close"
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition cursor-pointer"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -130,7 +132,7 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
 
         {/* Server Error Alert */}
         {serverError && (
-          <div className="mt-4 rounded-xl bg-red-50 p-3.5 text-xs font-semibold text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200/60 dark:border-red-800">
+          <div className="mt-4 rounded-xl bg-rose-50 p-3.5 text-xs font-semibold text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800">
             {serverError}
           </div>
         )}
@@ -138,8 +140,8 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-              Full Name <span className="text-slate-400 font-normal">(Optional)</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+              Full Name <span className="text-slate-400 font-normal lowercase">(optional)</span>
             </label>
             <Input
               {...nameRest}
@@ -152,13 +154,13 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
               disabled={isSubmitting}
             />
             {errors.name && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name.message}</p>
+              <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{errors.name.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-              Email Address <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+              Email Address <span className="text-rose-500">*</span>
             </label>
             <Input
               {...register("email")}
@@ -167,13 +169,13 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
               disabled={isSubmitting}
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email.message}</p>
+              <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{errors.email.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-              Password <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+              Password <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Input
@@ -194,39 +196,39 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
               </button>
             </div>
             {errors.password && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+              <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
                 {errors.password.message}
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
               Role
             </label>
-            <div className="mt-1.5 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <div className="mt-1 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-300">
               <span className="font-semibold text-slate-900 dark:text-white">Member (Standard Workspace Access)</span>
               <span className="rounded-md bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                1 Admin Limit Enforced
+                Member Role
               </span>
             </div>
             <input type="hidden" {...register("role")} value="MEMBER" />
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750 cursor-pointer disabled:opacity-60"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 cursor-pointer disabled:opacity-60"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer dark:bg-sky-500 dark:hover:bg-sky-600"
             >
               {isSubmitting ? (
                 <>

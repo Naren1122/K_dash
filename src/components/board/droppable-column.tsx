@@ -94,10 +94,10 @@ export function DroppableColumn({
           {column.wipLimit !== null ? (
             <span
               className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${isOverLimit
-                  ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-800 animate-bounce"
-                  : isAtLimit
-                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-800 animate-bounce"
+                : isAtLimit
+                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                 }`}
               title={`WIP Limit: ${column.wipLimit}`}
             >
