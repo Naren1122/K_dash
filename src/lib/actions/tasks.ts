@@ -41,7 +41,7 @@ const taskSelect = {
   assigneeId: true,
   createdById: true,
   assignee: {
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, emailVerified: true },
   },
   labels: {
     select: {
@@ -137,12 +137,17 @@ async function assertMemberOwnsTask(userId: string, task: { assigneeId: string |
 async function assertAssigneeIsMember(assigneeId: string) {
   const assignee = await prisma.user.findUnique({
     where: { id: assigneeId },
-    select: { role: true },
+    select: { role: true, emailVerified: true },
   });
 
   if (!assignee || assignee.role !== Role.MEMBER) {
     actionLogger("assignee_validation_failed", { assigneeId, role: assignee?.role });
     throw new ActionError(400, "Tasks can only be assigned to members");
+  }
+
+  if (!assignee.emailVerified) {
+    actionLogger("assignee_not_verified", { assigneeId });
+    throw new ActionError(400, "Tasks can only be assigned to members who have accepted their invitation");
   }
 }
 
@@ -171,14 +176,26 @@ function pickUpdatableFields(
 
 export async function createTask(input: CreateTaskInput) {
   const user = await requireAdmin();
-  const { title, description, assigneeId, priority, dueDate, labelIds } =
-    parseOrThrow(createTaskSchema, input);
+  const {
+    title,
+    description,
+    assigneeId,
+    priority,
+    dueDate,
+    labelIds,
+  } = parseOrThrow(createTaskSchema, input);
 
   if (assigneeId) {
     await assertAssigneeIsMember(assigneeId);
   }
 
-  actionLogger("create_task_start", { userId: user.id, title, assigneeId, priority, dueDate });
+  actionLogger("create_task_start", {
+    userId: user.id,
+    title,
+    assigneeId,
+    priority,
+    dueDate,
+  });
 
   const task = await prisma.task.create({
     data: {

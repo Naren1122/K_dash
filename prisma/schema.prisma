@@ -51,6 +51,7 @@ model User {
   sentChatMessages     ChatMessage[]  @relation("SentChatMessages")
   receivedChatMessages ChatMessage[]  @relation("ReceivedChatMessages")
   chatReactions        ChatReaction[]
+  sentInvitations      Invitation[]   @relation("SentInvitations")
   createdAt            DateTime       @default(now()) @map("created_at")
   updatedAt            DateTime       @updatedAt @map("updated_at")
 
@@ -71,6 +72,7 @@ model Task {
   labels      TaskLabel[]
   comments    Comment[]
   activities  ActivityLog[]
+  invitations Invitation[]
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
@@ -259,3 +261,30 @@ model ChatReaction {
   @@index([messageId])
   @@map("chat_reactions")
 }
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model Invitation {
+  id         String           @id @default(cuid())
+  email      String
+  token      String           @unique
+  status     InvitationStatus @default(PENDING)
+  role       Role             @default(MEMBER)
+  expiresAt  DateTime         @map("expires_at")
+  acceptedAt DateTime?        @map("accepted_at")
+  inviterId  String           @map("inviter_id")
+  inviter    User             @relation("SentInvitations", fields: [inviterId], references: [id], onDelete: Cascade)
+  taskId     String?          @map("task_id")
+  task       Task?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([token])
+  @@map("invitations")
+}
+

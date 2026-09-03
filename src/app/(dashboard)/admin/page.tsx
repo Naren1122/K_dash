@@ -12,6 +12,7 @@ export default async function AdminDashboardPage() {
       name: true;
       email: true;
       role: true;
+      emailVerified: true;
       createdAt: true;
       _count: { select: { assignedTasks: true } };
     };
@@ -25,6 +26,7 @@ export default async function AdminDashboardPage() {
         name: true,
         email: true,
         role: true,
+        emailVerified: true,
         createdAt: true,
         _count: {
           select: { assignedTasks: true },
@@ -67,6 +69,7 @@ export default async function AdminDashboardPage() {
     name: u.name,
     email: u.email,
     role: u.role,
+    isVerified: !!u.emailVerified,
     createdAt: u.createdAt.toISOString(),
     assignedTasksCount: u._count.assignedTasks,
   }));

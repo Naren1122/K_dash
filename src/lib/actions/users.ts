@@ -44,9 +44,12 @@ export async function getAdminUsers() {
 
 export async function getAssignees() {
   return prisma.user.findMany({
-    where: { role: "MEMBER" },
+    where: {
+      role: "MEMBER",
+      emailVerified: { not: null },
+    },
     orderBy: [{ name: "asc" }, { email: "asc" }],
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, emailVerified: true },
   });
 }
 

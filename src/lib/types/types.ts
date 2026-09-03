@@ -4,7 +4,9 @@ import { getDueDateStatus, toDateInputValue } from "@/lib/utils/dueDate";
 
 export { toDateInputValue };
 
-export type Assignee = Pick<User, "id" | "name" | "email">;
+export type Assignee = Pick<User, "id" | "name" | "email"> & {
+  emailVerified?: Date | string | null;
+};
 
 export type Label = Pick<PrismaLabel, "id" | "name" | "color">;
 

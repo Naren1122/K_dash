@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, UserPlus, X } from "lucide-react";
+import { Mail, UserPlus, X } from "lucide-react";
 
 import {
-  createUserSchema,
-  CreateUserFormValues,
-  CreateUserInput,
-} from "@/lib/schemas/usersSchema";
-import { createUser } from "@/lib/actions/users";
+  inviteUserSchema,
+  InviteUserInput,
+  InviteUserFormValues,
+} from "@/lib/schemas/invitationSchema";
+import { inviteUser } from "@/lib/actions/invitations";
 import { Input } from "@/components/ui/input";
 import { useActionRunner } from "@/hooks/useActionRunner";
 import { useToast } from "@/components/providers/toast-provider";
@@ -22,7 +22,6 @@ type CreateUserDialogProps = {
 
 export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
   const [visible, setVisible] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
   const { run, error: serverError, isPending: isSubmitting } = useActionRunner();
   const { showToast } = useToast();
@@ -32,12 +31,11 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CreateUserFormValues, unknown, CreateUserInput>({
-    resolver: zodResolver(createUserSchema),
+  } = useForm<InviteUserFormValues, unknown, InviteUserInput>({
+    resolver: zodResolver(inviteUserSchema),
     defaultValues: {
       name: "",
       email: "",
-      password: "",
       role: "MEMBER",
     },
   });
@@ -71,14 +69,23 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
 
   if (!isOpen) return null;
 
-  function onSubmit(data: CreateUserInput) {
-    run(() => createUser(data), {
-      onSuccess: (result) => {
-        showToast(`User ${result.email} added successfully as ${result.role}`, "success");
-        reset();
-        onClose();
-      },
-    });
+  function onSubmit(data: InviteUserInput) {
+    run(
+      () =>
+        inviteUser({
+          email: data.email,
+          name: data.name || undefined,
+          role: "MEMBER",
+        }),
+      {
+        onSuccess: (result) => {
+          const targetEmail = result?.email || data.email;
+          showToast(`Invitation sent to ${targetEmail}! ✉️`, "success");
+          reset();
+          onClose();
+        },
+      }
+    );
   }
 
   function handleBackdropClick(e: React.MouseEvent) {
@@ -107,15 +114,15 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
               <UserPlus className="h-5 w-5" />
             </div>
             <div>
               <h2 id="create-user-title" className="text-base font-bold text-slate-900 dark:text-white">
-                Add Team Member
+                Invite Team Member
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Create a new user account with credentials and workspace role.
+                Send a secure Gmail invitation link (valid for 15 minutes).
               </p>
             </div>
           </div>
@@ -160,12 +167,12 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Email Address <span className="text-rose-500">*</span>
+              Email / Gmail Address <span className="text-rose-500">*</span>
             </label>
             <Input
               {...register("email")}
               type="email"
-              placeholder="e.g. maya@company.com"
+              placeholder="e.g. maya@gmail.com"
               disabled={isSubmitting}
             />
             {errors.email && (
@@ -173,33 +180,14 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
             )}
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Password <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                {...register("password")}
-                type={showPassword ? "text" : "password"}
-                placeholder="At least 6 characters"
-                disabled={isSubmitting}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
-                {errors.password.message}
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3.5 text-xs text-indigo-700 dark:border-indigo-950 dark:bg-indigo-950/40 dark:text-indigo-300 flex items-start gap-2.5">
+            <Mail className="h-4 w-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Gmail Invitation</p>
+              <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-0.5">
+                The member will receive an email link valid for <strong>15 minutes</strong> to set their password. Once accepted, they will appear in your task assignment dropdown.
               </p>
-            )}
+            </div>
           </div>
 
           <div>
@@ -228,15 +216,15 @@ export function CreateUserDialog({ isOpen, onClose }: CreateUserDialogProps) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer dark:bg-sky-500 dark:hover:bg-sky-600"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Creating...
+                  Sending Invitation...
                 </>
               ) : (
-                "Create Member"
+                "Send Gmail Invitation"
               )}
             </button>
           </div>

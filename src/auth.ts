@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 
 import { Role } from "@/lib/types/prisma_type";
@@ -12,8 +13,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   trustHost: true,
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
   providers: [
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
     Credentials({
       name: "Credentials",
       credentials: {
@@ -52,7 +61,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           authLogger("authorize_success", { email, userId: user.id, role: user.role });
 
-          // Ensure we are returning exactly what the JWT callback expects
           return {
             id: user.id,
             name: user.name,
@@ -60,7 +68,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             role: user.role,
           };
         } catch (error) {
-          // Log at error level so it's visible in production (Vercel logs)
           console.error("[AUTH] authorize error:", error);
           return null;
         }
@@ -68,29 +75,60 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      // 1. On initial sign-in, `user` is available. Attach properties to the token.
-      if (user) {
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        const email = user.email?.toLowerCase();
+        if (!email) return false;
+
+        const dbUser = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (!dbUser) {
+          authLogger("google_signin_denied_not_found", { email });
+          return "/login?error=AccessDenied";
+        }
+
+        // Allow Admin or Member who has accepted their invitation
+        if (dbUser.role === Role.ADMIN || dbUser.emailVerified !== null) {
+          authLogger("google_signin_success", { email, role: dbUser.role });
+          return true;
+        }
+
+        authLogger("google_signin_denied_pending_invite", { email });
+        return "/login?error=InviteNotAccepted";
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
+      // If signed in via Google, fetch current DB user details
+      if (account?.provider === "google" && token.email) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email },
+            select: { id: true, role: true, name: true },
+          });
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.role = dbUser.role as Role;
+            token.name = dbUser.name ?? token.name;
+          }
+        } catch {
+          // Keep token values if DB query is temporarily unavailable
+        }
+      } else if (user) {
         token.id = user.id ?? token.sub ?? "";
         token.role = user.role as Role;
         logger.debug("AUTH: jwt_created", { userId: user.id, role: user.role });
       }
 
-      // 2. Handle manual session updates if triggered elsewhere in the app
-      if (trigger === "update" && session) {
-        if (session.role) token.role = session.role;
-        logger.debug("AUTH: jwt_updated", { userId: token.sub });
-      }
-
       return token;
     },
     async session({ session, token }) {
-      // 3. Transfer the token data to the session object for client-side use
       if (session.user) {
         session.user.id = (token.id as string) || (token.sub as string);
         session.user.role = token.role as Role;
 
-        // If email is present, sync current DB ID and role to avoid stale JWT state after DB resets/seeds
         if (session.user.email) {
           try {
             const dbUser = await prisma.user.findUnique({
@@ -110,7 +148,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-
   },
   events: {
     async signIn({ user, isNewUser }) {

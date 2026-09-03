@@ -13,7 +13,6 @@ import { MagicTaskInput } from "@/components/ai/magic-task-input";
 import type { Assignee, Label } from "@/lib/types/types";
 import type { MagicTaskResponse, DocumentTaskResponse } from "@/lib/schemas/aiSchema";
 
-
 type CreateTaskFormProps = {
   assignee: Assignee[];
   labels: Label[];
@@ -61,7 +60,6 @@ export function CreateTaskForm({
 
   function handleAiPopulate(aiData: MagicTaskResponse | DocumentTaskResponse) {
     if (aiData.title) setValue("title", aiData.title, { shouldValidate: true });
-
     if (aiData.description !== undefined) setValue("description", aiData.description ?? "", { shouldValidate: true });
     if (aiData.assigneeId !== undefined) setValue("assigneeId", aiData.assigneeId ?? "", { shouldValidate: true });
     if (aiData.priority) setValue("priority", aiData.priority, { shouldValidate: true });
@@ -94,7 +92,7 @@ export function CreateTaskForm({
           Create a new task
         </h3>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          Keep it clear, concise, and assign it to a team member when ready.
+          Keep it clear, concise, and assign it to an active team member.
         </p>
       </div>
 
@@ -104,7 +102,7 @@ export function CreateTaskForm({
         onPopulate={handleAiPopulate}
       />
 
-      <div>
+      <div className="md:col-span-2">
         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
           Task title
           <Input maxLength={200} placeholder="e.g. Review onboarding flow" {...register("title")} />

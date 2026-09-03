@@ -17,6 +17,7 @@ interface UserItem {
   role: Role;
   createdAt: string;
   assignedTasksCount: number;
+  isVerified: boolean;
 }
 
 interface UserTableProps {
@@ -89,6 +90,7 @@ export function UserTable({ users }: UserTableProps) {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300 font-medium">
               {paginatedUsers.map((user) => {
                 const isAdmin = user.role === "ADMIN";
+                const isPending = !isAdmin && !user.isVerified;
                 return (
                   <tr key={user.id} className="transition hover:bg-slate-50/60 dark:hover:bg-slate-800/50">
                     <td className="px-4 py-4">
@@ -96,15 +98,28 @@ export function UserTable({ users }: UserTableProps) {
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs ${isAdmin
                             ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
-                            : "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
+                            : isPending
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                              : "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
                             }`}
                         >
                           {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 dark:text-white text-sm">
-                            {user.name || "Unnamed User"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">
+                              {user.name || "Unnamed User"}
+                            </p>
+                            {isPending && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/80">
+                                <span className="relative flex h-1.5 w-1.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
+                                </span>
+                                Pending
+                              </span>
+                            )}
+                          </div>
                           <p className="text-slate-500 dark:text-slate-400 text-xs">{user.email}</p>
                         </div>
                       </div>
@@ -113,11 +128,17 @@ export function UserTable({ users }: UserTableProps) {
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${isAdmin
                           ? "bg-purple-50 text-purple-700 border border-purple-200/60 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800"
-                          : "bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800"
+                          : isPending
+                            ? "bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                            : "bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800"
                           }`}
                       >
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${isAdmin ? "bg-purple-600 dark:bg-purple-400" : "bg-sky-500 dark:bg-sky-400"
+                          className={`h-1.5 w-1.5 rounded-full ${isAdmin
+                            ? "bg-purple-600 dark:bg-purple-400"
+                            : isPending
+                              ? "bg-amber-500 dark:bg-amber-400"
+                              : "bg-sky-500 dark:bg-sky-400"
                             }`}
                         />
                         {user.role}
@@ -135,8 +156,11 @@ export function UserTable({ users }: UserTableProps) {
                     </td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <span className="rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                          {isAdmin ? "Full Access" : "Member Access"}
+                        <span className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold ${isPending
+                          ? "bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                          }`}>
+                          {isAdmin ? "Full Access" : isPending ? "Invite Pending" : "Member Access"}
                         </span>
                         {!isAdmin && (
                           <button

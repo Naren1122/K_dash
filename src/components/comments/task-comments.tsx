@@ -84,8 +84,8 @@ export function TaskComments({
     setMentionQuery(null);
   }
 
-  function onSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  function onSubmit(event?: React.SyntheticEvent) {
+    event?.preventDefault();
     const parsed = createCommentSchema.safeParse({ taskId, content: draft });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Invalid comment");
@@ -138,13 +138,17 @@ export function TaskComments({
 
   return (
     <section aria-label="Comments" className="mt-6">
-      <h3 className="text-base font-bold text-slate-900 dark:text-white">
-        Comments{" "}
-        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">({optimisticComments.length})</span>
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          Comments
+          <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+            {optimisticComments.length}
+          </span>
+        </h3>
+      </div>
 
       {error ? (
-        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300" role="alert">
+        <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400" role="alert">
           {error}
         </p>
       ) : null}
@@ -199,25 +203,23 @@ export function TaskComments({
                     {editingId === comment.id ? (
                       <div className="mt-2 space-y-2">
                         <textarea
-                          className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                           maxLength={2000}
                           onChange={(e) => setEditingContent(e.target.value)}
                           rows={3}
                           value={editingContent}
                         />
-                        <div className="flex justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-2">
                           <button
-                            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
-                            onClick={() => {
-                              setEditingId(null);
-                              setEditingContent("");
-                            }}
+                            className="rounded-lg px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                            onClick={() => setEditingId(null)}
                             type="button"
                           >
                             Cancel
                           </button>
                           <button
-                            className="rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 px-3 py-1 text-xs font-bold text-white shadow-2xs hover:from-sky-600 hover:to-indigo-700 cursor-pointer"
+                            className="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-2xs transition hover:bg-indigo-500 cursor-pointer disabled:opacity-50"
+                            disabled={isPending || editingContent.trim().length === 0}
                             onClick={() => saveEdit(comment)}
                             type="button"
                           >
@@ -226,27 +228,28 @@ export function TaskComments({
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">
+                      <p className="mt-1 break-words text-xs text-slate-700 dark:text-slate-300">
                         <MarkdownContent content={comment.content} />
-                      </div>
+                      </p>
                     )}
-                    {!isOptimistic && (canEdit || canDelete) ? (
-                      <div className="mt-2 flex gap-1.5">
-                        {canEdit && editingId !== comment.id ? (
+
+                    {editingId !== comment.id && (canEdit || canDelete) ? (
+                      <div className="mt-2 flex items-center gap-2 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                        {canEdit ? (
                           <button
-                            className="rounded-lg border border-sky-200/80 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:bg-sky-500 hover:text-white hover:border-sky-500 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300 dark:hover:bg-sky-600 dark:hover:text-white cursor-pointer"
+                            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer"
                             onClick={() => startEdit(comment)}
                             type="button"
                           >
                             Edit
                           </button>
                         ) : null}
+                        {canEdit && canDelete ? <span>•</span> : null}
                         {canDelete ? (
                           <button
-                            className="rounded-lg border border-rose-200/80 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600 transition hover:bg-rose-500 hover:text-white hover:border-rose-500 dark:border-red-900/80 dark:bg-red-950/60 dark:text-red-300 dark:hover:bg-red-600 dark:hover:text-white cursor-pointer"
-                            disabled={isPending}
+                            className="hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
                             onClick={() =>
-                              run(() => deleteComment(comment.id), {
+                              run(() => deleteComment({ commentId: comment.id }), {
                                 successMessage: "Comment deleted!",
                               })
                             }
@@ -265,7 +268,7 @@ export function TaskComments({
         )}
       </ul>
 
-      <form className="relative mt-4 flex gap-2" onSubmit={onSubmit}>
+      <div className="relative mt-4 flex gap-2">
         {mentionQuery !== null && assignees.length > 0 ? (
           <MentionAutocomplete
             assignees={assignees}
@@ -283,17 +286,24 @@ export function TaskComments({
           className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition hover:border-slate-300 hover:bg-slate-50 placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-slate-600 dark:placeholder:text-slate-400 dark:focus:bg-slate-800"
           maxLength={2000}
           onChange={(event) => handleInputChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              onSubmit(event);
+            }
+          }}
           placeholder="Write a comment... (Type @ to mention team members)"
           value={draft}
         />
         <button
           className="shrink-0 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           disabled={isPending || draft.trim().length === 0}
-          type="submit"
+          type="button"
+          onClick={onSubmit}
         >
           Post
         </button>
-      </form>
+      </div>
     </section>
   );
 }

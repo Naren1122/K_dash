@@ -27,6 +27,14 @@ export const NotificationType = {
 } as const;
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 
+export const InvitationStatus = {
+  PENDING: "PENDING",
+  ACCEPTED: "ACCEPTED",
+  EXPIRED: "EXPIRED",
+  REVOKED: "REVOKED",
+} as const;
+export type InvitationStatus = (typeof InvitationStatus)[keyof typeof InvitationStatus];
+
 export { Prisma } from "@/generated/prisma";
 
 export type {
@@ -44,6 +52,8 @@ export type {
   VerificationToken,
   ChatMessage,
   ChatReaction,
+  Invitation,
 } from "@/generated/prisma";
+
 
 
