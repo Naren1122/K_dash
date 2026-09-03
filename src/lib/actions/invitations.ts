@@ -26,11 +26,10 @@ const actionLogger = (name: string, context?: Record<string, unknown>) =>
 const INVITATION_EXPIRY_MINUTES = 15;
 
 function getBaseAppUrl(): string {
-  return (
-    process.env.NEXTAUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "http://localhost:3000"
-  );
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
 }
 
 export async function findInvitationByTokenInDb(token: string) {
