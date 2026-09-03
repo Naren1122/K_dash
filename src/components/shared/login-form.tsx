@@ -64,7 +64,7 @@ export function LoginForm() {
         <section className="relative hidden overflow-hidden bg-[#111625] p-12 text-white lg:flex lg:flex-col lg:justify-between">
           <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full border-[32px] border-sky-500/10" />
           <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-gradient-to-br from-sky-500/20 to-blue-600/10 blur-3xl" />
-          
+
           <div className="relative flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-black text-lg shadow-md shadow-sky-500/25">
               K

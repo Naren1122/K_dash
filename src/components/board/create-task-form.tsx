@@ -11,7 +11,8 @@ import { LabelPicker } from "@/components/labels/label-picker";
 import { PRIORITY_OPTIONS } from "@/components/board/priority-badge";
 import { MagicTaskInput } from "@/components/ai/magic-task-input";
 import type { Assignee, Label } from "@/lib/types/types";
-import type { MagicTaskResponse } from "@/lib/schemas/aiSchema";
+import type { MagicTaskResponse, DocumentTaskResponse } from "@/lib/schemas/aiSchema";
+
 
 type CreateTaskFormProps = {
   assignee: Assignee[];
@@ -58,8 +59,9 @@ export function CreateTaskForm({
     setValue("labelIds", next);
   }
 
-  function handleAiPopulate(aiData: MagicTaskResponse) {
+  function handleAiPopulate(aiData: MagicTaskResponse | DocumentTaskResponse) {
     if (aiData.title) setValue("title", aiData.title, { shouldValidate: true });
+
     if (aiData.description !== undefined) setValue("description", aiData.description ?? "", { shouldValidate: true });
     if (aiData.assigneeId !== undefined) setValue("assigneeId", aiData.assigneeId ?? "", { shouldValidate: true });
     if (aiData.priority) setValue("priority", aiData.priority, { shouldValidate: true });

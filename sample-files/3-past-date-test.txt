@@ -1,0 +1,8 @@
+Bug Report: Fix navigation bar dropdown alignment
+
+Priority: Medium
+Deadline: 2021-03-15
+
+Details:
+The navigation bar dropdown menu is misaligned on screens smaller than 768px.
+Please adjust the CSS padding and z-index so the menu displays properly.

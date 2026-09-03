@@ -123,3 +123,31 @@ export const summarizeThreadResponseSchema = z.object({
 });
 
 export type SummarizeThreadResponse = z.infer<typeof summarizeThreadResponseSchema>;
+
+// ==========================================
+// 4. Document Task Creator Schemas
+// ==========================================
+
+export const documentTaskResponseSchema = z.object({
+  isValidTaskDocument: z.boolean(),
+  rejectionReason: z.string().nullable().optional(),
+  title: z
+    .string()
+    .trim()
+    .max(200, "Title must be 200 characters or fewer")
+    .nullable()
+    .optional(),
+  description: z.string().nullable().optional(),
+
+  assigneeId: z.string().nullable().optional(),
+  priority: z.nativeEnum(Priority).default(Priority.MEDIUM),
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Due date must be in YYYY-MM-DD format")
+    .nullable()
+    .optional(),
+  labelIds: z.array(z.string()).default([]),
+});
+
+export type DocumentTaskResponse = z.infer<typeof documentTaskResponseSchema>;
+

@@ -29,11 +29,12 @@ export function getGeminiClient(): GoogleGenAI {
 
 export type GenerateStructuredContentOptions = {
   model?: string;
-  contents: string;
+  contents: string | Array<string | { inlineData: { data: string; mimeType: string } } | Record<string, unknown>>;
   systemInstruction?: string;
   responseJsonSchema?: Record<string, unknown>;
   temperature?: number;
 };
+
 
 /**
  * Executes a structured content generation call with timeout, validation, and error translation.

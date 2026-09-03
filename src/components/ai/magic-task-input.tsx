@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2, Wand2, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Loader2, Wand2, ChevronDown, ChevronUp, FileUp, MessageSquare } from "lucide-react";
 import { generateTaskFromPromptAction } from "@/lib/actions/ai";
 import { SparkleBadge } from "@/components/ui/sparkle-badge";
+import { DocumentTaskUploader } from "@/components/ai/document-task-uploader";
 import type { Assignee, Label } from "@/lib/types/types";
-import type { MagicTaskResponse } from "@/lib/schemas/aiSchema";
+import type { MagicTaskResponse, DocumentTaskResponse } from "@/lib/schemas/aiSchema";
 
 type MagicTaskInputProps = {
   assignees: Assignee[];
   labels: Label[];
-  onPopulate: (taskData: MagicTaskResponse) => void;
+  onPopulate: (taskData: MagicTaskResponse | DocumentTaskResponse) => void;
 };
 
 const PROMPT_SUGGESTIONS = [
@@ -20,6 +21,7 @@ const PROMPT_SUGGESTIONS = [
 ];
 
 export function MagicTaskInput({ assignees, labels, onPopulate }: MagicTaskInputProps) {
+  const [activeTab, setActiveTab] = useState<"prompt" | "document">("prompt");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,12 @@ export function MagicTaskInput({ assignees, labels, onPopulate }: MagicTaskInput
     }
   }
 
+  function handleDocumentPopulate(taskData: DocumentTaskResponse) {
+    onPopulate(taskData);
+    setSuccessFlash(true);
+    setTimeout(() => setSuccessFlash(false), 2500);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -78,78 +86,118 @@ export function MagicTaskInput({ assignees, labels, onPopulate }: MagicTaskInput
           <div>
             <div className="flex items-center gap-2">
               <h4 className="text-xs font-bold text-indigo-950 dark:text-indigo-200">
-                Magic Task Creator
+                AI Task Assistant
               </h4>
               <SparkleBadge text="Gemini" size="sm" />
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Type in natural language to auto-populate title, priority, dates, assignees & labels.
+              Generate tasks from natural language prompts or upload project documents (PDF / Word / TXT).
             </p>
           </div>
         </div>
 
-        <button
-          aria-label={isOpen ? "Collapse Magic Creator" : "Expand Magic Creator"}
-          className="rounded-lg p-1 text-slate-400 hover:bg-indigo-100/60 dark:text-slate-500 dark:hover:bg-slate-800 cursor-pointer"
-          onClick={() => setIsOpen(!isOpen)}
-          type="button"
-        >
-          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-      </div>
-
-      {isOpen && (
-        <div className="mt-3 space-y-2.5">
-          <div className="relative flex items-center">
-            <input
-              className="w-full rounded-xl border border-indigo-200 bg-white/90 py-2.5 pl-3.5 pr-28 text-xs text-slate-900 placeholder:text-slate-400 shadow-2xs outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-3 focus:ring-indigo-100 dark:border-indigo-800/80 dark:bg-slate-900/90 dark:text-white dark:placeholder:text-slate-500 dark:focus:ring-indigo-950 disabled:opacity-60"
-              disabled={isGenerating}
-              maxLength={500}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g. Refactor login page by Thursday, High priority, assign to Maya, add Bug label"
-              value={prompt}
-            />
+        <div className="flex items-center gap-1.5">
+          {/* Mode Switcher Tabs */}
+          <div className="inline-flex rounded-xl bg-white/80 p-0.5 border border-indigo-200/60 shadow-2xs dark:bg-slate-900/80 dark:border-indigo-900/60">
             <button
-              aria-label="Generate Task from Natural Language"
-              className="absolute right-1.5 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:from-indigo-500 hover:to-purple-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-              disabled={isGenerating || prompt.trim().length === 0}
-              onClick={() => handleGenerate()}
               type="button"
+              onClick={() => setActiveTab("prompt")}
+              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                activeTab === "prompt"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Parsing...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Generate</span>
-                </>
-              )}
+              <MessageSquare className="h-3 w-3" />
+              <span>Prompt</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("document")}
+              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                activeTab === "document"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              <FileUp className="h-3 w-3" />
+              <span>Document</span>
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-              Try:
-            </span>
-            {PROMPT_SUGGESTIONS.map((suggestion, idx) => (
-              <button
-                key={idx}
-                className="rounded-lg border border-indigo-200/70 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-indigo-900 transition hover:border-indigo-400 hover:bg-indigo-100/80 dark:border-indigo-900/60 dark:bg-slate-900/80 dark:text-indigo-300 dark:hover:bg-indigo-950/60 cursor-pointer text-left"
-                disabled={isGenerating}
-                onClick={() => {
-                  setPrompt(suggestion);
-                  handleGenerate(suggestion);
-                }}
-                type="button"
-              >
-                {suggestion.slice(0, 45)}...
-              </button>
-            ))}
-          </div>
+          <button
+            aria-label={isOpen ? "Collapse AI Creator" : "Expand AI Creator"}
+            className="rounded-lg p-1 text-slate-400 hover:bg-indigo-100/60 dark:text-slate-500 dark:hover:bg-slate-800 cursor-pointer"
+            onClick={() => setIsOpen(!isOpen)}
+            type="button"
+          >
+            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="mt-3.5 space-y-2.5">
+          {activeTab === "prompt" ? (
+            <>
+              <div className="relative flex items-center">
+                <input
+                  className="w-full rounded-xl border border-indigo-200 bg-white/90 py-2.5 pl-3.5 pr-28 text-xs text-slate-900 placeholder:text-slate-400 shadow-2xs outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-3 focus:ring-indigo-100 dark:border-indigo-800/80 dark:bg-slate-900/90 dark:text-white dark:placeholder:text-slate-500 dark:focus:ring-indigo-950 disabled:opacity-60"
+                  disabled={isGenerating}
+                  maxLength={500}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="e.g. Refactor login page by Thursday, High priority, assign to Maya, add Bug label"
+                  value={prompt}
+                />
+                <button
+                  aria-label="Generate Task from Natural Language"
+                  className="absolute right-1.5 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:from-indigo-500 hover:to-purple-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  disabled={isGenerating || prompt.trim().length === 0}
+                  onClick={() => handleGenerate()}
+                  type="button"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Parsing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Generate</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                  Try:
+                </span>
+                {PROMPT_SUGGESTIONS.map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    className="rounded-lg border border-indigo-200/70 bg-white/80 px-2 py-0.5 text-[10px] font-medium text-indigo-900 transition hover:border-indigo-400 hover:bg-indigo-100/80 dark:border-indigo-900/60 dark:bg-slate-900/80 dark:text-indigo-300 dark:hover:bg-indigo-950/60 cursor-pointer text-left"
+                    disabled={isGenerating}
+                    onClick={() => {
+                      setPrompt(suggestion);
+                      handleGenerate(suggestion);
+                    }}
+                    type="button"
+                  >
+                    {suggestion.slice(0, 45)}...
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <DocumentTaskUploader
+              assignees={assignees}
+              labels={labels}
+              onPopulate={handleDocumentPopulate}
+            />
+          )}
 
           {successFlash && (
             <div className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 animate-in fade-in">
