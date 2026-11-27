@@ -1,4 +1,4 @@
-import type { Role, User } from "@/lib/types/prisma_type";
+import type { Role, Prisma } from "@/lib/types/prisma_type";
 
 export type ChatReactionGroup = {
   emoji: string;
@@ -7,8 +7,15 @@ export type ChatReactionGroup = {
   userNames: string[];
 };
 
-export type ChatAuthor = Pick<User, "id" | "name" | "email" | "role" | "image">;
+export const chatAuthorSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  image: true,
+} satisfies Prisma.UserSelect;
 
+export type ChatAuthor = Prisma.UserGetPayload<{ select: typeof chatAuthorSelect }>;
 
 export type ChatMessageItem = {
   id: string;

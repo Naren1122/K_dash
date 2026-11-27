@@ -4,7 +4,6 @@ import { z } from "zod";
 import { Role } from "@/lib/types/prisma_type";
 import { revalidatePath } from "next/cache";
 
-import { prisma } from "@/lib/utils/prisma";
 import {
   createTaskSchema,
   CreateTaskInput,
@@ -22,110 +21,33 @@ import {
   parseOrThrow,
   requireAdmin,
 } from "@/lib/utils/action-utils";
-import type { Assignee, BoardTask, Label } from "@/lib/types/types";
+import type { BoardTask } from "@/lib/types/types";
 
 import { createActivityLog } from "@/lib/actions/activity";
 import { notifyTaskStakeholders } from "@/lib/actions/notifications";
+import { findUserById } from "@/lib/data/user.data";
+import {
+  findBoardTasksInDb,
+  findTaskByIdInDb,
+  createTaskInDb,
+  updateTaskInDb,
+  updateTaskStatusInDb,
+  reassignTaskInDb,
+  deleteTaskInDb,
+} from "@/lib/data/task.data";
 
 const actionLogger = (name: string, context?: Record<string, unknown>) => logger.action(name, context);
-
-const taskSelect = {
-  id: true,
-  title: true,
-  description: true,
-  status: true,
-  priority: true,
-  dueDate: true,
-  createdAt: true,
-  updatedAt: true,
-  assigneeId: true,
-  createdById: true,
-  assignee: {
-    select: { id: true, name: true, email: true, emailVerified: true },
-  },
-  labels: {
-    select: {
-      label: { select: { id: true, name: true, color: true } },
-    },
-  },
-  comments: {
-    orderBy: { createdAt: "asc" as const },
-    take: 50,
-    select: {
-      id: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-      author: { select: { id: true, name: true, email: true } },
-    },
-  },
-} as const;
-
-type TaskWithRelations = {
-  id: string;
-  title: string;
-  description: string | null;
-  status: BoardTask["status"];
-  priority: BoardTask["priority"];
-  dueDate: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  assignee: Assignee | null;
-  labels: Array<{ label: Label }>;
-  comments: Array<{
-    id: string;
-    content: string;
-    createdAt: Date;
-    updatedAt: Date;
-    author: Assignee;
-  }>;
-};
-
-function formatTaskDto(task: TaskWithRelations): BoardTask {
-
-  return {
-    ...task,
-    dueDate: task.dueDate?.toISOString() ?? null,
-    createdAt: task.createdAt.toISOString(),
-    updatedAt: task.updatedAt.toISOString(),
-    labels: task.labels.map(({ label }) => label),
-    comments: task.comments.map((comment) => ({
-      ...comment,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString(),
-    })),
-  };
-}
 
 export async function getBoardTasks(
   userId: string,
   role: Role | "ADMIN" | "MEMBER"
 ): Promise<BoardTask[]> {
-  const tasks = await prisma.task.findMany({
-    where:
-      role === "ADMIN"
-        ? undefined
-        : {
-          assigneeId: userId,
-        },
-    orderBy: { updatedAt: "desc" },
-    select: taskSelect,
-  });
-
-  return tasks.map(formatTaskDto);
+  return findBoardTasksInDb(userId, role);
 }
 
 export async function getTaskById(taskId: string): Promise<BoardTask | null> {
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
-    select: taskSelect,
-  });
-
-  if (!task) return null;
-
-  return formatTaskDto(task);
+  return findTaskByIdInDb(taskId);
 }
-
 
 async function assertMemberOwnsTask(userId: string, task: { assigneeId: string | null }) {
   if (task.assigneeId !== userId) {
@@ -135,10 +57,7 @@ async function assertMemberOwnsTask(userId: string, task: { assigneeId: string |
 }
 
 async function assertAssigneeIsMember(assigneeId: string) {
-  const assignee = await prisma.user.findUnique({
-    where: { id: assigneeId },
-    select: { role: true, emailVerified: true },
-  });
+  const assignee = await findUserById(assigneeId);
 
   if (!assignee || assignee.role !== Role.MEMBER) {
     actionLogger("assignee_validation_failed", { assigneeId, role: assignee?.role });
@@ -153,64 +72,28 @@ async function assertAssigneeIsMember(assigneeId: string) {
 
 const updateTaskInputSchema = updateTaskSchema.extend({
   taskId: taskIdSchema,
+  status: taskStatusSchema.optional(),
 });
 
 type UpdateTaskData = z.infer<typeof updateTaskInputSchema>;
 
-function pickUpdatableFields(
-  data: UpdateTaskData,
-  isAdmin: boolean,
-): Partial<Omit<UpdateTaskData, "taskId" | "labelIds">> {
-  const { title, description, assigneeId, dueDate, priority } = data;
-
-  const patch: Partial<Omit<UpdateTaskData, "taskId" | "labelIds">> = {};
-
-  if (title !== undefined) patch.title = title;
-  if (description !== undefined) patch.description = description;
-  if (assigneeId !== undefined) patch.assigneeId = assigneeId;
-  if (dueDate !== undefined) patch.dueDate = dueDate;
-  if (isAdmin && priority !== undefined) patch.priority = priority;
-
-  return patch;
-}
-
 export async function createTask(input: CreateTaskInput) {
   const user = await requireAdmin();
-  const {
-    title,
-    description,
-    assigneeId,
-    priority,
-    dueDate,
-    labelIds,
-  } = parseOrThrow(createTaskSchema, input);
+  const parsed = parseOrThrow(createTaskSchema, input);
 
-  if (assigneeId) {
-    await assertAssigneeIsMember(assigneeId);
+  if (parsed.assigneeId) {
+    await assertAssigneeIsMember(parsed.assigneeId);
   }
 
   actionLogger("create_task_start", {
     userId: user.id,
-    title,
-    assigneeId,
-    priority,
-    dueDate,
+    title: parsed.title,
+    assigneeId: parsed.assigneeId,
+    priority: parsed.priority,
+    dueDate: parsed.dueDate,
   });
 
-  const task = await prisma.task.create({
-    data: {
-      title,
-      description,
-      assigneeId,
-      priority,
-      dueDate,
-      createdById: user.id,
-      labels: {
-        create: labelIds.map((labelId) => ({ labelId })),
-      },
-    },
-    select: { id: true },
-  });
+  const task = await createTaskInDb(parsed, user.id);
 
   await createActivityLog({
     taskId: task.id,
@@ -218,161 +101,135 @@ export async function createTask(input: CreateTaskInput) {
     action: "CREATED",
   });
 
-  await notifyTaskStakeholders(task.id, "TASK_ASSIGNED", {
-    taskId: task.id,
-    taskTitle: title,
-    actorId: user.id,
-    actorName: (user.name || user.email || undefined) as string | undefined,
-    message: `${user.name || user.email || "Admin"} created task "${title}"`,
-  });
-
-  if (dueDate) {
-    const now = new Date();
-    const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const dueObj = new Date(dueDate);
-    if (dueObj <= oneDayLater) {
-      const diffMs = dueObj.getTime() - now.getTime();
-      const hoursLeft = Math.round(diffMs / (1000 * 60 * 60));
-      const message = hoursLeft <= 0
-        ? `Deadline alert: "${title}" is due today!`
-        : hoursLeft <= 24
-          ? `Deadline alert: "${title}" is due in ${hoursLeft} ${hoursLeft === 1 ? "hour" : "hours"} (less than 24h left)!`
-          : `Deadline alert: "${title}" is due tomorrow!`;
-
-      await notifyTaskStakeholders(task.id, "TASK_DUE_SOON", {
-        taskId: task.id,
-        taskTitle: title,
-        actorId: user.id,
-        actorName: (user.name || user.email || undefined) as string | undefined,
-        message,
-      });
-    }
+  if (task.assignee) {
+    await notifyTaskStakeholders(task.id, "TASK_ASSIGNED", {
+      taskId: task.id,
+      taskTitle: task.title,
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `${user.name || user.email || "Admin"} assigned task "${task.title}" to you`,
+    });
   }
 
   actionLogger("create_task_success", { taskId: task.id });
-  revalidatePath("/board");
   revalidatePath("/");
-  const fullTask = await getTaskById(task.id);
-  return fullTask;
+  return task;
 }
 
-export async function updateTask(input: unknown) {
+export async function updateTask(input: UpdateTaskData) {
   const user = await getCurrentUser();
-  const data = parseOrThrow(updateTaskInputSchema, input);
-  const { taskId, labelIds } = data;
+  const { taskId, labelIds, ...patchFields } = parseOrThrow(updateTaskInputSchema, input);
 
-  actionLogger("update_task_start", { taskId, userId: user.id });
-
-  const current = await getTaskOrThrow(taskId);
+  const existingTask = await getTaskOrThrow(taskId);
 
   if (user.role === Role.MEMBER) {
-    await assertMemberOwnsTask(user.id, current);
+    await assertMemberOwnsTask(user.id, existingTask);
   }
 
-  if (data.assigneeId) {
-    await assertAssigneeIsMember(data.assigneeId);
+  if (patchFields.assigneeId) {
+    await assertAssigneeIsMember(patchFields.assigneeId);
   }
 
-  const patch = pickUpdatableFields(data, user.role === Role.ADMIN);
-
-  await prisma.task.update({
-    where: { id: taskId },
-    data: {
-      ...patch,
-      ...(labelIds !== undefined && {
-        labels: {
-          deleteMany: {},
-          create: labelIds.map((labelId: string) => ({ labelId })),
-        },
-      }),
-    },
-    select: { id: true },
+  const updatedTask = await updateTaskInDb(taskId, {
+    title: patchFields.title,
+    description: patchFields.description,
+    status: patchFields.status,
+    priority: user.role === Role.ADMIN ? patchFields.priority : undefined,
+    dueDate: patchFields.dueDate ? new Date(patchFields.dueDate) : patchFields.dueDate === null ? null : undefined,
+    assigneeId: patchFields.assigneeId,
+    labelIds,
   });
 
-  await createActivityLog({
-    taskId,
-    userId: user.id,
-    action: "UPDATED",
-  });
+  // Log activity differences
+  if (patchFields.title && patchFields.title !== existingTask.title) {
+    await createActivityLog({
+      taskId,
+      userId: user.id,
+      action: "UPDATED_TITLE",
+      oldValue: existingTask.title,
+      newValue: patchFields.title,
+    });
+  }
 
-  await notifyTaskStakeholders(taskId, "TASK_ASSIGNED", {
-    taskId,
-    taskTitle: current.title,
-    actorId: user.id,
-    actorName: (user.name || user.email || undefined) as string | undefined,
-    message: `${user.name || user.email || "Someone"} updated task "${current.title}"`,
-  });
+  if (patchFields.status && patchFields.status !== existingTask.status) {
+    await createActivityLog({
+      taskId,
+      userId: user.id,
+      action: "STATUS_CHANGED",
+      oldValue: existingTask.status,
+      newValue: patchFields.status,
+    });
 
-  if (data.dueDate) {
-    const now = new Date();
-    const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const dueObj = new Date(data.dueDate);
-    if (dueObj <= oneDayLater) {
-      const diffMs = dueObj.getTime() - now.getTime();
-      const hoursLeft = Math.round(diffMs / (1000 * 60 * 60));
-      const message = hoursLeft <= 0
-        ? `Deadline alert: "${current.title}" is due today!`
-        : hoursLeft <= 24
-          ? `Deadline alert: "${current.title}" is due in ${hoursLeft} ${hoursLeft === 1 ? "hour" : "hours"} (less than 24h left)!`
-          : `Deadline alert: "${current.title}" is due tomorrow!`;
+    await notifyTaskStakeholders(taskId, "TASK_STATUS_CHANGED", {
+      taskId,
+      taskTitle: updatedTask.title,
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `${user.name || user.email || "Someone"} changed status to ${patchFields.status}`,
+    });
+  }
 
-      await notifyTaskStakeholders(taskId, "TASK_DUE_SOON", {
+  if (patchFields.assigneeId !== undefined && patchFields.assigneeId !== existingTask.assigneeId) {
+    await createActivityLog({
+      taskId,
+      userId: user.id,
+      action: "REASSIGNED",
+      oldValue: existingTask.assigneeId ?? "unassigned",
+      newValue: patchFields.assigneeId ?? "unassigned",
+    });
+
+    if (patchFields.assigneeId) {
+      await notifyTaskStakeholders(taskId, "TASK_ASSIGNED", {
         taskId,
-        taskTitle: current.title,
+        taskTitle: updatedTask.title,
         actorId: user.id,
         actorName: (user.name || user.email || undefined) as string | undefined,
-        message,
+        message: `${user.name || user.email || "Admin"} assigned task "${updatedTask.title}" to you`,
       });
     }
   }
 
   actionLogger("update_task_success", { taskId });
-  revalidatePath("/board");
   revalidatePath("/");
-  const fullTask = await getTaskById(taskId);
-  return fullTask;
+  return updatedTask;
 }
 
 export async function updateTaskStatus(input: UpdateTaskStatusInput) {
   const user = await getCurrentUser();
   const { taskId, status } = parseOrThrow(
     z.object({ taskId: taskIdSchema, status: taskStatusSchema }),
-    input,
+    input
   );
 
-  actionLogger("update_task_status_start", { taskId, status, userId: user.id });
-
-  const current = await getTaskOrThrow(taskId);
+  const existingTask = await getTaskOrThrow(taskId);
 
   if (user.role === Role.MEMBER) {
-    await assertMemberOwnsTask(user.id, current);
+    await assertMemberOwnsTask(user.id, existingTask);
   }
 
-  const updated = await prisma.task.update({
-    where: { id: taskId },
-    data: { status },
-    select: { id: true, status: true },
-  });
+  if (existingTask.status === status) {
+    return existingTask;
+  }
+
+  const updated = await updateTaskStatusInDb(taskId, status);
 
   await createActivityLog({
     taskId,
     userId: user.id,
     action: "STATUS_CHANGED",
-    field: "status",
-    oldValue: current.status,
+    oldValue: existingTask.status,
     newValue: status,
   });
 
   await notifyTaskStakeholders(taskId, "TASK_STATUS_CHANGED", {
     taskId,
-    taskTitle: current.title,
+    taskTitle: updated.title,
     actorId: user.id,
     actorName: (user.name || user.email || undefined) as string | undefined,
-    message: `${user.name || user.email || "Someone"} changed status of "${current.title}" to ${status}`,
+    message: `${user.name || user.email || "Someone"} moved "${updated.title}" to ${status}`,
   });
 
-  actionLogger("update_task_status_success", { taskId, status });
-  revalidatePath("/board");
+  actionLogger("update_task_status_success", { taskId, oldStatus: existingTask.status, newStatus: status });
   revalidatePath("/");
   return updated;
 }
@@ -380,68 +237,51 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput) {
 export async function reassignTask(input: ReassignTaskInput) {
   const user = await requireAdmin();
   const { taskId, assigneeId } = parseOrThrow(
-    z.object({
-      taskId: taskIdSchema,
-      assigneeId: z.string().trim().min(1, "Assignee ID is required"),
-    }),
-    input,
+    z.object({ taskId: taskIdSchema, assigneeId: z.string().nullable() }),
+    input
   );
 
-  await assertAssigneeIsMember(assigneeId);
+  const existingTask = await getTaskOrThrow(taskId);
 
-  actionLogger("reassign_task_start", { taskId, assigneeId });
+  if (assigneeId) {
+    await assertAssigneeIsMember(assigneeId);
+  }
 
-  const current = await getTaskOrThrow(taskId);
-
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { assigneeId },
-    select: { id: true, assigneeId: true },
-  });
+  const updated = await reassignTaskInDb(taskId, assigneeId);
 
   await createActivityLog({
     taskId,
     userId: user.id,
     action: "REASSIGNED",
-    field: "assigneeId",
-    oldValue: current.assigneeId ?? undefined,
-    newValue: assigneeId,
+    oldValue: existingTask.assigneeId ?? "unassigned",
+    newValue: assigneeId ?? "unassigned",
   });
 
-  await notifyTaskStakeholders(taskId, "TASK_ASSIGNED", {
-    taskId,
-    taskTitle: current.title,
-    actorId: user.id,
-    actorName: (user.name || user.email || undefined) as string | undefined,
-    message: `${user.name || user.email || "Admin"} assigned task "${current.title}"`,
-  });
+  if (assigneeId) {
+    await notifyTaskStakeholders(taskId, "TASK_ASSIGNED", {
+      taskId,
+      taskTitle: updated.title,
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `${user.name || user.email || "Admin"} assigned task "${updated.title}" to you`,
+    });
+  }
 
   actionLogger("reassign_task_success", { taskId, assigneeId });
-  revalidatePath("/board");
   revalidatePath("/");
-  const fullTask = await getTaskById(taskId);
-  return fullTask;
+  return updated;
 }
 
-export async function deleteTask(taskId: unknown) {
+export async function deleteTask(taskIdInput: unknown) {
   const user = await requireAdmin();
-  const id = parseOrThrow(taskIdSchema, taskId);
+  const taskId = parseOrThrow(taskIdSchema, taskIdInput);
 
-  actionLogger("delete_task_start", { taskId: id });
+  actionLogger("delete_task_start", { taskId, userId: user.id });
 
-  const task = await getTaskOrThrow(id);
+  await getTaskOrThrow(taskId);
+  await deleteTaskInDb(taskId);
 
-  await notifyTaskStakeholders(id, "TASK_STATUS_CHANGED", {
-    taskId: id,
-    taskTitle: task.title,
-    actorId: user.id,
-    actorName: (user.name || user.email || undefined) as string | undefined,
-    message: `${user.name || user.email || "Admin"} deleted task "${task.title}"`,
-  });
-
-  await prisma.task.delete({ where: { id } });
-
-  actionLogger("delete_task_success", { taskId: id });
-  revalidatePath("/board");
+  actionLogger("delete_task_success", { taskId });
   revalidatePath("/");
+  return { success: true };
 }

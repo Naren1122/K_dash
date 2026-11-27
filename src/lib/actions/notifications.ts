@@ -4,33 +4,21 @@ import { prisma } from "@/lib/utils/prisma";
 import type { NotificationType } from "@/lib/types/prisma_type";
 
 import { getCurrentUser, ActionError } from "@/lib/utils/action-utils";
-import { getAdminUsers } from "@/lib/actions/users";
+import { getAdminUsers } from "@/lib/data/user.data";
 import type { NotificationPayload } from "@/lib/types/types";
+import {
+  trimUserNotificationsInDb,
+  createNotificationInDb,
+  findUserNotificationsInDb,
+  markNotificationAsReadInDb,
+  markAllNotificationsAsReadInDb,
+  findDueSoonTasksInDb,
+  findExistingNotificationInDb,
+} from "@/lib/data/notification.data";
 
-const MAX_NOTIFICATIONS_PER_USER = 10;
-
-/**
- * Automatically trims notifications for a user so they never exceed the max limit (10).
- * Deletes the oldest notifications beyond the 10 most recent.
- */
 export async function trimUserNotifications(userId: string) {
   try {
-    const recent = await prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: MAX_NOTIFICATIONS_PER_USER,
-      select: { id: true },
-    });
-
-    if (recent.length === MAX_NOTIFICATIONS_PER_USER) {
-      const keepIds = recent.map((r) => r.id);
-      await prisma.notification.deleteMany({
-        where: {
-          userId,
-          id: { notIn: keepIds },
-        },
-      });
-    }
+    await trimUserNotificationsInDb(userId);
   } catch (error) {
     console.error("Failed to trim notifications:", error);
   }
@@ -42,86 +30,29 @@ export async function createNotification(
   payload: NotificationPayload
 ) {
   try {
-    const created = await prisma.notification.create({
-      data: {
-        userId,
-        type,
-        payload: payload as object,
-      },
-    });
-
-    await trimUserNotifications(userId);
-    return created;
+    return await createNotificationInDb(userId, type, payload);
   } catch (error) {
     console.error("Failed to create notification:", error);
   }
 }
 
 export async function getUserNotifications(userId: string) {
-  return prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: MAX_NOTIFICATIONS_PER_USER,
-    select: {
-      id: true,
-      type: true,
-      payload: true,
-      readAt: true,
-      createdAt: true,
-    },
-  });
+  return findUserNotificationsInDb(userId);
 }
 
-/**
- * Checks for upcoming task deadlines (within 24 hours) and creates
- * TASK_DUE_SOON notifications for BOTH admin and member roles.
- */
 export async function checkAndCreateDueSoonNotifications(userId: string) {
   try {
-    const now = new Date();
-    const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-    // Find all active tasks due within the next 24 hours (or overdue)
-    const dueSoonTasks = await prisma.task.findMany({
-      where: {
-        status: { not: "DONE" },
-        dueDate: {
-          gte: oneDayAgo,
-          lte: oneDayLater,
-        },
-      },
-      select: {
-        id: true,
-        title: true,
-        dueDate: true,
-      },
-    });
-
+    const dueSoonTasks = await findDueSoonTasksInDb();
     if (dueSoonTasks.length === 0) return;
 
-    // Check existing TASK_DUE_SOON notifications for this user in the last 24h
-    const existingNotifications = await prisma.notification.findMany({
-      where: {
-        userId,
-        type: "TASK_DUE_SOON",
-        createdAt: { gte: oneDayAgo },
-      },
-      select: {
-        payload: true,
-      },
-    });
-
-    const notifiedTaskIds = new Set<string>();
-    for (const notif of existingNotifications) {
-      const payload = notif.payload as NotificationPayload | null;
-      if (payload?.taskId) {
-        notifiedTaskIds.add(payload.taskId);
-      }
-    }
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const now = new Date();
 
     for (const task of dueSoonTasks) {
-      if (!task.dueDate || notifiedTaskIds.has(task.id)) continue;
+      if (!task.dueDate) continue;
+
+      const existing = await findExistingNotificationInDb(userId, "TASK_DUE_SOON", task.id, oneDayAgo);
+      if (existing) continue;
 
       const diffMs = task.dueDate.getTime() - now.getTime();
       const hoursLeft = Math.round(diffMs / (1000 * 60 * 60));
@@ -150,10 +81,6 @@ export async function checkAndCreateDueSoonNotifications(userId: string) {
   }
 }
 
-/**
- * Notifies ALL users (both Admin and Member, as well as the actor role itself)
- * for every task change made on the board.
- */
 export async function notifyTaskStakeholders(
   _taskId: string,
   type: NotificationType,
@@ -176,9 +103,6 @@ export async function notifyTaskStakeholders(
     await prisma.notification.createMany({
       data: notificationsToCreate,
     });
-
-    // Auto-trim notifications for each recipient to keep max 10
-    await Promise.all(recipientIds.map((id) => trimUserNotifications(id)));
   } catch (error) {
     console.error("Failed to notify task stakeholders:", error);
   }
@@ -199,8 +123,6 @@ export async function notifyAllAdmins(
           payload: payload as object,
         })),
       });
-
-      await Promise.all(admins.map((a) => trimUserNotifications(a.id)));
     }
   } catch (error) {
     console.error("Failed to notify admins:", error);
@@ -208,17 +130,11 @@ export async function notifyAllAdmins(
 }
 
 export async function markNotificationAsRead(id: string, userId: string) {
-  return prisma.notification.updateMany({
-    where: { id, userId },
-    data: { readAt: new Date() },
-  });
+  return markNotificationAsReadInDb(id, userId);
 }
 
 export async function markAllNotificationsAsRead(userId: string) {
-  return prisma.notification.updateMany({
-    where: { userId, readAt: null },
-    data: { readAt: new Date() },
-  });
+  return markAllNotificationsAsReadInDb(userId);
 }
 
 export async function deleteNotification(id: string, userId: string) {

@@ -165,6 +165,110 @@ export async function sendInvitationEmail({
   }
 }
 
+interface SendPasswordResetEmailParams {
+  toEmail: string;
+  userName?: string | null;
+  resetUrl: string;
+}
+
+export async function sendPasswordResetEmail({
+  toEmail,
+  userName,
+  resetUrl,
+}: SendPasswordResetEmailParams): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER || "Kanban Task Board <noreply@kanban.app>";
+    const greetingName = userName ? userName : "there";
+
+    const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Your Password - Kanban Task Board</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 40px 16px; color: #1e293b;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+          <tr>
+            <td style="padding: 36px 36px 20px 36px; text-align: left; background-color: #0284c7;">
+              <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em;">
+                Kanban Task Board
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 36px;">
+              <h2 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 12px; color: #0f172a;">
+                Hi ${escapeHtml(greetingName)},
+              </h2>
+              <p style="font-size: 15px; line-height: 24px; color: #334155; margin-top: 0; margin-bottom: 16px;">
+                We received a request to reset the password for your account on Kanban Task Board.
+              </p>
+              <p style="font-size: 15px; line-height: 24px; color: #334155; margin-top: 0; margin-bottom: 24px;">
+                Click the button below to choose a new password:
+              </p>
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${resetUrl}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px; padding: 14px 28px; border-radius: 10px; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);">
+                      Reset Password
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size: 13px; line-height: 20px; color: #64748b; margin-top: 0; margin-bottom: 12px;">
+                This link is valid for 15 minutes. If you did not request this password reset, please safely ignore this email — your account remains secure.
+              </p>
+              <p style="font-size: 12px; word-break: break-all; color: #0284c7; margin: 0;">
+                <a href="${resetUrl}" style="color: #0284c7; text-decoration: underline;">${resetUrl}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 36px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+                Kanban Task Board • Secure Password Verification
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+    `;
+
+    if (!transporter) {
+      logger.warn("SMTP credentials not configured (SMTP_USER/SMTP_PASS missing). Password reset link:", {
+        toEmail,
+        resetUrl,
+      });
+      console.log("\n================ [PASSWORD RESET EMAIL SIMULATION] ================");
+      console.log(`To: ${toEmail}`);
+      console.log(`Reset Link: ${resetUrl}`);
+      console.log("Configure SMTP_USER and SMTP_PASS in .env to send real emails.");
+      console.log("====================================================================\n");
+      return { success: true };
+    }
+
+    await transporter.sendMail({
+      from: fromAddress,
+      to: toEmail,
+      subject: "Reset your password on Kanban Task Board",
+      html,
+    });
+
+    logger.info("Password reset email dispatched successfully", { toEmail });
+    return { success: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Failed to send email";
+    logger.error("Error sending password reset email", { toEmail, error: errorMsg });
+    return { success: false, error: errorMsg };
+  }
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

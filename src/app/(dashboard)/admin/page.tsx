@@ -1,65 +1,20 @@
-import { prisma } from "@/lib/utils/prisma";
-import { Role, TaskStatus, type Prisma } from "@/lib/types/prisma_type";
+import { Role } from "@/lib/types/prisma_type";
 import { StatCards } from "@/components/admin/stat-cards";
 import { UserTable } from "@/components/admin/user-table";
 import { LabelManager } from "@/components/labels/label-manager";
 import { ColumnManager } from "@/components/admin/column-manager";
+import { getAdminDashboardStatsInDb } from "@/lib/data/admin.data";
 
 export default async function AdminDashboardPage() {
-  type UserWithCount = Prisma.UserGetPayload<{
-    select: {
-      id: true;
-      name: true;
-      email: true;
-      role: true;
-      emailVerified: true;
-      createdAt: true;
-      _count: { select: { assignedTasks: true } };
-    };
-  }>;
-
-  const results = await Promise.all([
-    prisma.user.findMany({
-      orderBy: [{ role: "asc" }, { createdAt: "desc" }],
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        emailVerified: true,
-        createdAt: true,
-        _count: {
-          select: { assignedTasks: true },
-        },
-      },
-    }),
-    prisma.task.count(),
-    prisma.task.count({ where: { status: TaskStatus.TODO } }),
-    prisma.task.count({ where: { status: TaskStatus.IN_PROGRESS } }),
-    prisma.task.count({ where: { status: TaskStatus.DONE } }),
-    prisma.label.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, color: true },
-    }),
-    prisma.board.findFirst({
-      orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        columns: {
-          orderBy: { position: "asc" },
-          select: { id: true, name: true, position: true, status: true, wipLimit: true, boardId: true },
-        },
-      },
-    }),
-  ]);
-
-  const users: UserWithCount[] = results[0];
-  const tasksCount = results[1];
-  const todoCount = results[2];
-  const inProgressCount = results[3];
-  const doneCount = results[4];
-  const labels = results[5];
-  const boardData = results[6];
+  const {
+    users,
+    tasksCount,
+    todoCount,
+    inProgressCount,
+    doneCount,
+    labels,
+    boardData,
+  } = await getAdminDashboardStatsInDb();
 
   const adminCount = users.filter((u) => u.role === Role.ADMIN).length;
   const memberCount = users.filter((u) => u.role === Role.MEMBER).length;

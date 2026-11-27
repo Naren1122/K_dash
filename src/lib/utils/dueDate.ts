@@ -59,3 +59,16 @@ export function toDateInputValue(iso: string | null | undefined): string {
   return `${year}-${month}-${day}`;
 }
 
+export function dueDateInfo(dueDate: string | null | undefined) {
+  const status = getDueDateStatus(dueDate);
+  if (status === "none") return null;
+  if (status === "overdue") {
+    return { tone: "overdue", label: "Overdue" } as const;
+  }
+  if (status === "upcoming_48h") {
+    return { tone: "upcoming", label: "Due soon" } as const;
+  }
+  return { tone: "ok", label: "Due" } as const;
+}
+
+

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/providers/toast-provider";
 import { loginSchema, LoginInput } from "@/lib/schemas/loginSchema";
@@ -54,6 +55,9 @@ export function LoginForm() {
 
     if (searchParams.get("verified") === "true") {
       showToast("Account activated successfully! Please sign in with your password or Google 🎉", "success");
+    } else if (searchParams.get("message") === "password_reset_success") {
+      loginLogger("password_reset_success_view");
+      showToast("Your password has been reset successfully! You can now sign in 🎉", "success");
     } else if (searchParams.get("message") === "signed_out") {
       loginLogger("signed_out_page_view");
       showToast("You've been signed out. See you next time! 👋", "info");
@@ -214,15 +218,23 @@ export function LoginForm() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5" htmlFor="password">
-                  Password
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400" htmlFor="password">
+                    Password
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-semibold text-sky-600 hover:text-sky-500 hover:underline dark:text-sky-400 dark:hover:text-sky-300"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <input
                   autoComplete="current-password"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 dark:border-slate-800 dark:bg-slate-800/80 dark:text-white dark:focus:border-sky-400 dark:focus:ring-sky-950/60"
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Admin123!"
                   {...register("password")}
                 />
                 {errors.password ? <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{errors.password.message}</p> : null}

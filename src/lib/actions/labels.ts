@@ -1,9 +1,6 @@
 "use server";
 
-import { cache } from "react";
 import { revalidatePath } from "next/cache";
-
-import { prisma } from "@/lib/utils/prisma";
 import {
   createLabelSchema,
   CreateLabelInput,
@@ -15,23 +12,25 @@ import { logger } from "@/lib/utils/logger";
 import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/lib/utils/action-utils";
 import type { Label } from "@/lib/types/types";
 import { notifyAllAdmins } from "@/lib/actions/notifications";
+import {
+  getBoardLabelsFromDb,
+  findLabelsInDb,
+  findLabelByNameInDb,
+  findLabelByIdInDb,
+  createLabelInDb,
+  updateLabelInDb,
+  deleteLabelInDb,
+} from "@/lib/data/label.data";
 
 const actionLogger = (name: string, context?: Record<string, unknown>) => logger.action(name, context);
 
-export const getBoardLabels = cache(async (): Promise<Label[]> => {
-  return prisma.label.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, color: true },
-  });
-});
+export async function getBoardLabels(): Promise<Label[]> {
+  return getBoardLabelsFromDb();
+}
 
 export async function getLabels() {
   const user = await getCurrentUser();
-
-  const labels = await prisma.label.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, color: true },
-  });
+  const labels = await findLabelsInDb();
 
   actionLogger("get_labels", { userId: user.id, count: labels.length });
   return labels;
@@ -43,16 +42,13 @@ export async function createLabel(input: CreateLabelInput) {
 
   actionLogger("create_label_start", { name, color });
 
-  const existing = await prisma.label.findFirst({ where: { name } });
+  const existing = await findLabelByNameInDb(name);
   if (existing) {
     actionLogger("create_label_duplicate", { name });
     throw new ActionError(400, "A label with this name already exists");
   }
 
-  const label = await prisma.label.create({
-    data: { name, color },
-    select: { id: true, name: true, color: true },
-  });
+  const label = await createLabelInDb({ name, color });
 
   await notifyAllAdmins("TASK_STATUS_CHANGED", {
     actorId: user.id,
@@ -72,19 +68,13 @@ export async function updateLabel(input: UpdateLabelInput) {
 
   actionLogger("update_label_start", { labelId: id });
 
-  const duplicate = await prisma.label.findFirst({
-    where: { name: data.name, id: { not: id } },
-  });
+  const duplicate = await findLabelByNameInDb(data.name, id);
   if (duplicate) {
     actionLogger("update_label_duplicate", { name: data.name });
     throw new ActionError(400, "A label with this name already exists");
   }
 
-  const label = await prisma.label.update({
-    where: { id },
-    data: { name: data.name, color: data.color },
-    select: { id: true, name: true, color: true },
-  });
+  const label = await updateLabelInDb(id, { name: data.name, color: data.color });
 
   await notifyAllAdmins("TASK_STATUS_CHANGED", {
     actorId: user.id,
@@ -101,13 +91,10 @@ export async function deleteLabel(labelId: unknown) {
   const user = await requireAdmin();
   const id = parseOrThrow(labelIdSchema, labelId);
 
-  const existing = await prisma.label.findUnique({ where: { id } });
+  const existing = await findLabelByIdInDb(id);
+  const deleted = await deleteLabelInDb(id);
 
-  const labels = await prisma.label.deleteMany({
-    where: { id },
-  });
-
-  if (labels.count === 0) {
+  if (deleted.count === 0) {
     actionLogger("delete_label_not_found", { labelId: id });
     throw new ActionError(404, "Label not found");
   }

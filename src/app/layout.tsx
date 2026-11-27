@@ -10,8 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Kanban Task Board",
-  description: "A role-based task board built with Next.js.",
+  title: "K-Dash — Kanban for teams",
+  description:
+    "A modern, invite-only Kanban board with drag-and-drop, priorities, due dates, labels, comments and analytics. Built with Next.js.",
 };
 
 export default function RootLayout({

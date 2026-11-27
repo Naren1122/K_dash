@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 
 import { Role } from "@/lib/types/prisma_type";
-import { prisma } from "@/lib/utils/prisma";
 import {
   commentIdSchema,
   createCommentSchema,
@@ -16,10 +15,35 @@ import { ActionError, getCurrentUser, getTaskOrThrow, parseOrThrow } from "@/lib
 
 import { createActivityLog } from "@/lib/actions/activity";
 import { notifyTaskStakeholders } from "@/lib/actions/notifications";
+import {
+  findCommentsByTaskIdInDb,
+  findCommentByIdInDb,
+  createCommentInDb,
+  updateCommentInDb,
+  deleteCommentInDb,
+} from "@/lib/data/comment.data";
 
 const actionLogger = (name: string, context?: Record<string, unknown>) => logger.action(name, context);
 
 const COMMENT_EDIT_WINDOW_MS = 5 * 60 * 1000;
+
+export async function getTaskCommentsAction(taskId: string) {
+  if (!taskId || typeof taskId !== "string") {
+    throw new ActionError(400, "Task ID is required");
+  }
+
+  await getCurrentUser();
+
+  const comments = await findCommentsByTaskIdInDb(taskId);
+
+  return {
+    comments: comments.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+    })),
+  };
+}
 
 export async function createComment(input: CreateCommentInput) {
   const user = await getCurrentUser();
@@ -33,9 +57,10 @@ export async function createComment(input: CreateCommentInput) {
 
   actionLogger("create_comment_start", { taskId, userId: user.id });
 
-  const comment = await prisma.comment.create({
-    data: { content, taskId, authorId: user.id },
-    select: { id: true, content: true, createdAt: true },
+  const comment = await createCommentInDb({
+    content,
+    taskId,
+    authorId: user.id,
   });
 
   await createActivityLog({
@@ -58,6 +83,7 @@ export async function createComment(input: CreateCommentInput) {
   return {
     ...comment,
     createdAt: comment.createdAt.toISOString(),
+    updatedAt: comment.updatedAt.toISOString(),
   };
 }
 
@@ -65,10 +91,7 @@ export async function updateComment(input: UpdateCommentInput) {
   const user = await getCurrentUser();
   const { commentId, content } = parseOrThrow(updateCommentSchema, input);
 
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-    select: { id: true, authorId: true, taskId: true, createdAt: true },
-  });
+  const comment = await findCommentByIdInDb(commentId);
 
   if (!comment) {
     actionLogger("comment_not_found", { commentId });
@@ -88,11 +111,7 @@ export async function updateComment(input: UpdateCommentInput) {
 
   actionLogger("update_comment_start", { commentId, userId: user.id });
 
-  const updated = await prisma.comment.update({
-    where: { id: commentId },
-    data: { content },
-    select: { id: true, content: true, updatedAt: true },
-  });
+  const updated = await updateCommentInDb(commentId, content);
 
   await notifyTaskStakeholders(comment.taskId, "TASK_COMMENTED", {
     taskId: comment.taskId,
@@ -113,10 +132,7 @@ export async function deleteComment(commentId: unknown) {
   const user = await getCurrentUser();
   const id = parseOrThrow(commentIdSchema, commentId);
 
-  const comment = await prisma.comment.findUnique({
-    where: { id },
-    select: { id: true, authorId: true, taskId: true },
-  });
+  const comment = await findCommentByIdInDb(id);
 
   if (!comment) {
     actionLogger("comment_not_found", { commentId: id });
@@ -137,7 +153,7 @@ export async function deleteComment(commentId: unknown) {
     message: `${user.name || user.email || "Someone"} deleted a comment on task`,
   });
 
-  await prisma.comment.delete({ where: { id } });
+  await deleteCommentInDb(id);
   actionLogger("delete_comment_success", { commentId: id });
   revalidatePath("/");
 }

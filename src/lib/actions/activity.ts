@@ -1,42 +1,23 @@
 "use server";
 
-import { prisma } from "@/lib/utils/prisma";
 import { getCurrentUser, ActionError } from "@/lib/utils/action-utils";
 import { logger } from "@/lib/utils/logger";
 import type { CreateActivityLogParams } from "@/lib/types/types";
+import {
+  createActivityLogInDb,
+  findActivityLogsByTaskIdInDb,
+} from "@/lib/data/activity.data";
 
 export async function createActivityLog(params: CreateActivityLogParams) {
   try {
-    return await prisma.activityLog.create({
-      data: {
-        taskId: params.taskId,
-        userId: params.userId,
-        action: params.action,
-        field: params.field ?? null,
-        oldValue: params.oldValue ?? null,
-        newValue: params.newValue ?? null,
-      },
-    });
+    return await createActivityLogInDb(params);
   } catch (error) {
     logger.error("activity_log_creation_failed", { error, taskId: params.taskId });
   }
 }
 
 export async function getActivityLogsForTask(taskId: string) {
-  return prisma.activityLog.findMany({
-    where: { taskId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  return findActivityLogsByTaskIdInDb(taskId);
 }
 
 export async function getActivityLogsAction(taskId: string) {

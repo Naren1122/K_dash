@@ -29,10 +29,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/board", request.url));
   }
 
-  // 3. If root path '/', redirect to board if logged in, else login
-  if (pathname === "/") {
-    const target = sessionToken ? "/board" : "/login";
-    return NextResponse.redirect(new URL(target, request.url));
+  // 3. If root path '/' and already logged in, go straight to the board.
+  //    Unauthenticated visitors stay on the landing page (no redirect).
+  if (pathname === "/" && sessionToken) {
+    return NextResponse.redirect(new URL("/board", request.url));
   }
 
   return NextResponse.next();

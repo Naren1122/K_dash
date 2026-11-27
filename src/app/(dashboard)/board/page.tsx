@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getCachedSession } from "@/lib/data/session.data";
 import { Board } from "@/components/board";
-import { getBoardTasks } from "@/lib/actions/tasks";
-import { getAssignees } from "@/lib/actions/users";
-import { getBoardLabels } from "@/lib/actions/labels";
-import { getBoardColumns } from "@/lib/actions/columns";
+import { findBoardTasksInDb } from "@/lib/data/task.data";
+import { getAssignees } from "@/lib/data/user.data";
+import { getBoardLabelsFromDb } from "@/lib/data/label.data";
+import { getBoardColumnsFromDb } from "@/lib/data/column.data";
 
 export const dynamic = "force-dynamic";
 
@@ -13,17 +13,17 @@ export const metadata = {
 };
 
 export default async function BoardPage() {
-  const session = await auth();
+  const session = await getCachedSession();
 
   if (!session?.user) {
     redirect("/login");
   }
 
   const [boardTasks, assignees, labels, boardColumnsRaw] = await Promise.all([
-    getBoardTasks(session.user.id, session.user.role),
+    findBoardTasksInDb(session.user.id, session.user.role),
     getAssignees(),
-    getBoardLabels(),
-    getBoardColumns(),
+    getBoardLabelsFromDb(),
+    getBoardColumnsFromDb(),
   ]);
 
   return (

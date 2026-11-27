@@ -69,11 +69,10 @@ export function BoardHeader({ isAdmin, labels, presenceNode }: BoardHeaderProps)
                 key={view.id}
                 type="button"
                 onClick={() => setActiveView(view.id)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer whitespace-nowrap ${
-                  activeView === view.id
-                    ? "bg-white text-slate-950 shadow-xs font-bold dark:bg-slate-900 dark:text-white"
-                    : "text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"
-                }`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer whitespace-nowrap ${activeView === view.id
+                  ? "bg-white text-slate-950 shadow-xs font-bold dark:bg-slate-900 dark:text-white"
+                  : "text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"
+                  }`}
               >
                 {view.icon} {view.label}
               </button>

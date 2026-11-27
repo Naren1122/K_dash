@@ -1,8 +1,6 @@
 "use server";
 
-import { cache } from "react";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/utils/prisma";
 import { Prisma } from "@/lib/types/prisma_type";
 import {
   columnIdSchema,
@@ -17,25 +15,26 @@ import { logger } from "@/lib/utils/logger";
 import { ActionError, getCurrentUser, parseOrThrow, requireAdmin } from "@/lib/utils/action-utils";
 import type { BoardColumn } from "@/lib/types/column-types";
 import { notifyAllAdmins } from "@/lib/actions/notifications";
+import {
+  getBoardColumnsFromDb,
+  findColumnsInDb,
+  findColumnByIdInDb,
+  findHighestColumnPositionInDb,
+  createColumnInDb,
+  updateColumnInDb,
+  deleteColumnInDb,
+  reorderColumnsInDb,
+} from "@/lib/data/column.data";
 
 const actionLogger = (name: string, context?: Record<string, unknown>) => logger.action(name, context);
 
-export const getBoardColumns = cache(async (): Promise<BoardColumn[]> => {
-  return prisma.column.findMany({
-    orderBy: { position: "asc" },
-  });
-});
+export async function getBoardColumns(): Promise<BoardColumn[]> {
+  return getBoardColumnsFromDb();
+}
 
 export async function getColumns(boardId?: string) {
   await getCurrentUser();
-
-  const where = boardId ? { boardId } : {};
-  const columns = await prisma.column.findMany({
-    where,
-    orderBy: { position: "asc" },
-  });
-
-  return columns;
+  return findColumnsInDb(boardId);
 }
 
 export async function createColumn(input: CreateColumnInput) {
@@ -44,40 +43,32 @@ export async function createColumn(input: CreateColumnInput) {
 
   actionLogger("create_column_start", { name: data.name, boardId: data.boardId });
 
-  // Get current highest position for this board
-  const lastColumn = await prisma.column.findFirst({
-    where: { boardId: data.boardId },
-    orderBy: { position: "desc" },
-    select: { position: true },
-  });
+  const nextPosition = await findHighestColumnPositionInDb(data.boardId);
 
-  const nextPosition = lastColumn ? lastColumn.position + 1 : 0;
-
-  const column = await prisma.column.create({
-    data: {
+  try {
+    const column = await createColumnInDb({
       name: data.name,
       status: data.status,
-      wipLimit: data.wipLimit ?? null,
+      wipLimit: data.wipLimit,
       position: nextPosition,
       boardId: data.boardId,
-    },
-  }).catch((e: unknown) => {
+    });
+
+    await notifyAllAdmins("TASK_STATUS_CHANGED", {
+      actorId: user.id,
+      actorName: (user.name || user.email || undefined) as string | undefined,
+      message: `${user.name || user.email || "Admin"} created column "${column.name}"`,
+    });
+
+    actionLogger("create_column_success", { columnId: column.id });
+    revalidatePath("/");
+    return column;
+  } catch (e: unknown) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new ActionError(409, `A column with status "${data.status}" already exists on this board`);
     }
     throw e;
-  });
-
-
-  await notifyAllAdmins("TASK_STATUS_CHANGED", {
-    actorId: user.id,
-    actorName: (user.name || user.email || undefined) as string | undefined,
-    message: `${user.name || user.email || "Admin"} created column "${column.name}"`,
-  });
-
-  actionLogger("create_column_success", { columnId: column.id });
-  revalidatePath("/");
-  return column;
+  }
 }
 
 export async function updateColumn(input: UpdateColumnInput) {
@@ -86,17 +77,14 @@ export async function updateColumn(input: UpdateColumnInput) {
 
   actionLogger("update_column_start", { columnId: data.columnId });
 
-  const existing = await prisma.column.findUnique({ where: { id: data.columnId } });
+  const existing = await findColumnByIdInDb(data.columnId);
   if (!existing) {
     throw new ActionError(404, "Column not found");
   }
 
-  const updated = await prisma.column.update({
-    where: { id: data.columnId },
-    data: {
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.wipLimit !== undefined && { wipLimit: data.wipLimit }),
-    },
+  const updated = await updateColumnInDb(data.columnId, {
+    name: data.name,
+    wipLimit: data.wipLimit,
   });
 
   await notifyAllAdmins("TASK_STATUS_CHANGED", {
@@ -116,12 +104,12 @@ export async function deleteColumn(columnId: unknown) {
 
   actionLogger("delete_column_start", { columnId: id });
 
-  const column = await prisma.column.findUnique({ where: { id } });
+  const column = await findColumnByIdInDb(id);
   if (!column) {
     throw new ActionError(404, "Column not found");
   }
 
-  await prisma.column.delete({ where: { id } });
+  await deleteColumnInDb(id);
 
   await notifyAllAdmins("TASK_STATUS_CHANGED", {
     actorId: user.id,
@@ -139,26 +127,7 @@ export async function reorderColumns(input: ReorderColumnsInput) {
 
   actionLogger("reorder_columns_start", { boardId, count: columnIds.length });
 
-  // We use a two-step update in a single transaction to avoid unique constraint 
-  // violations (boardId, position) when swapping positions.
-  const updates = [
-    // Step 1: Move all updated columns to temporary negative positions
-    ...columnIds.map((id: string, index: number) =>
-      prisma.column.update({
-        where: { id },
-        data: { position: -(index + 1) * 1000 },
-      }),
-    ),
-    // Step 2: Assign the final correct positions
-    ...columnIds.map((id: string, index: number) =>
-      prisma.column.update({
-        where: { id },
-        data: { position: index },
-      }),
-    ),
-  ];
-
-  await prisma.$transaction(updates);
+  await reorderColumnsInDb(columnIds);
 
   actionLogger("reorder_columns_success", { boardId });
   revalidatePath("/");
